@@ -1,8 +1,13 @@
-﻿
+
 VCC_CTRL_SWITCH = "GPIO4_D5"
 IRQ_OUT			= "GPIO4_A6"	--针卡：IRQ_OUT
+
 OSC_EN          = "GPIO4_A4"	--PG GPIO8 ->针卡GPIO7
-PANEL_RST       = "GPIO4_A7"		--CP2:"GPIO4_A3"   MT:GPIO4_A7
+--PANEL_RST       =  EXT_IO5		--CP2:"GPIO4_A3"   MT:GPIO4_A7
+
+PANEL_RST  = "GPIO3_D6" 
+
+--PANEL_RST = "GPIO4_A5"
 
 VCC_IO_SWITCH   = "GPIO4_D4"
 EXT_IO1	        = "GPIO3_D5"
@@ -11,6 +16,7 @@ EXT_IO3         = "GPIO3_D7"
 EXT_IO4         = "GPIO4_A5"	--针卡：OSC_EN
 EXT_IO5         = "GPIO3_D6"	--针卡：ARST
 EXT_IO6         = "GPIO4_A6"	--针卡：IRQ
+EXT_IO7     	= "GPIO4_A3"
 POWER_5V_EN		= "GPIO2_A2"
 
 ARM_IO1_1V8     = "GPIO3_D5"
@@ -29,6 +35,7 @@ ARM_IO13_3V0    = "GPIO1_C4"
 ARM_IO14_3V0    = "GPIO1_C6"
 ARM_IO15_3V0    = "GPIO1_C7"
 ARM_IO16_3V0    = "GPIO1_D0"
+
 
 OUT             = "out"
 IN              = "in"
@@ -96,7 +103,7 @@ function RestInit()
 	if TEST_MODE=="MT" then
 		PANEL_RST       = "GPIO4_A7"
 	elseif TEST_MODE=="CP2" then
-		PANEL_RST       = "GPIO4_A3"
+		PANEL_RST       = "GPIO3_D6"
 	end
 	LOG.DEBUG(string.format("TEST_MODE:%s,RestInit:%s",TEST_MODE,PANEL_RST))
 	MCU.IO_LEVEL(IO_LEVEL)
@@ -107,11 +114,28 @@ function RestInit()
 	
 	GPIO.OUT(POWER_5V_EN,HIGH)
 	GPIO_DIR_SET(1)
+	GPIO_ALL_SET(0)
 end
 
 function RESET(level)
 	GPIO.OUT(PANEL_RST, level)
 end
+
+--Tab2
+function  GPIO_PGM_EN_SET(level)
+	GPIO.OUT(EXT_IO4, level)
+end
+
+function GPIO_TEST_IM_SET(level)
+	GPIO.OUT(EXT_IO7, level)
+end
+
+function GPIO_RESET_SET(level)
+	GPIO.OUT(EXT_IO5, level)
+end
+
+--Tab2
+
 
 
 
@@ -127,12 +151,20 @@ function GPIO3_A_SET(level)
 	GPIO.OUT(EXT_IO3, level)
 end
 
+function GPIO4_A_SET(level)
+	GPIO.OUT(EXT_IO4, level)
+end
+
 function GPIO5_A_SET(level)
 	GPIO.OUT(EXT_IO5, level)
 end
 
 function GPIO6_A_SET(level)
 	GPIO.OUT(EXT_IO6, level)
+end
+
+function GPIO7_A_SET(level)
+	GPIO.OUT(EXT_IO7, level)
 end
 
 function OSC_EN_SET(level)

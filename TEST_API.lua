@@ -1,448 +1,234 @@
+DAC_calibration_code = 0
+per_step_uA = 21
+bit8 = (DAC_calibration_code >> 8) & 0x01
+byte_low = DAC_calibration_code & 0xFF
 
-Bandgap_code = 0
-tempratue_0p25_code=0
-tempratue_0p75_code=0
-DAC_POINTA_CODE=0
-DAC_POINTB_CODE=0
-thermal_sensor0_code=0
-thermal_sensor1_code=0
-DAC_cal_trim_step = 0
-DAC_calibration_code=0
-DI_trim_code=0
-LUT_code = 0
-LundyuLED_code=0
-caled_temp_point=50
 
-mipi_term_90=0X1B1B1
-mipi_term_270=0x1011
-Efuse_90_clk=0x03
-Efuse_90_data=0x03
-Efuse_270_clk=0x01
-Efuse_270_data=0x01
 
-Pixel_Current_uA = 0
-Duty_cycle = 0
-raw_values = {}--efuse缓存值
-CRC1_MINLEN = {
-    4,--code
-    4,--rev
-    9,--x
-    9,--y
-    6,--L0
-    6,--L1
-    6,--L2
-    6,--L3
-    6,--L4
-    6,--L5
-    6,--L6
-    6,--L7
-    6,--L8
-    6,--wafer
-    5,--fab
-    5,--foundry
-    15,--jtagID
-    2,--sub
-    2,--min0
-    2,--maj
-    4,--b1
-    32,--timestamp
-    6--S1
-}
-CRC3_MINLEN={4,4}
-
-dac_crc_MINLEN = {
-    1,--DAC_MODE
-    4,--DAC_CAL
-    12,--DAC_POINTA
-    12,--DAC_POINTB
-    
-}
-CRC_TEMP_MINLEN = {
-    4,--BGTRIM
-    12,--Temperature
-    10,--TEMP_1q
-    10,--TEMP_3q
-    10,--SensorA
-    10--SensorB
-    
-}
-CRC_MIPI_TERM = {
-	3,--CLK-TERM90
-	3,--DATA-TERM90
-	3,--CLK-TERM270
-	3,--DATA-TERM90
+DAC_cal_buf = {
+	0x72,  --1stP
+	0x10,  --2ndP
+	0x10,  --3rdP
+	0x10,  --4thP
+	0x20,  --5thP
+	0x10,  --6thP
+	0x10,  --7thP
+	0x25,  --8thP
+	0x0A,  --9thP
+	0x0A,  --10thP
+	0x03,  --11thP
+	0x11,  --12thP
+	0x20,  --13thP
+	bit8,  --14thP  PBIAS_IPXL_TRIM[8]
+	byte_low, --15thP  PBIAS_IPXL_TRIM[7:0]
+	0x08,  --16thP
+	0x08,  --17thP
+	0x10,  --18thP
+	0x00,  --19thP
+	0x00,  --20thP
+	0x00,  --21thP
+	0x00,  --22thP
+	0x00,  --23thP
+	0x00,  --24thP
+	0x20,  --25thP
+	0x20,  --26thP
+	0x20,  --27thP
+	0x20,  --28thP
+	0x88,  --29thP
+	0x02,  --30thP
+	0x00,  --31thP
+	0x02,  --32thP
+	0x00,  --33thp
+	0x00   --34thp
 }
 
-efuse_field = {
-    {name = "Die_ID",       s=0x00, e=0xFF, fmt="Die_ID:0X%02X",	MATCHED=1},
-    {name = "code",         s=0x00, e=0x03, fmt="code:0X%02X",	MATCHED=0},
-    {name = "rev",          s=0x04, e=0x07, fmt="rev:0X%02X",		MATCHED=0},
-    {name = "x",            s=0x08, e=0x10, fmt="x:%d",			MATCHED=0},
-    {name = "y",            s=0x11, e=0x19, fmt="y:%d",			MATCHED=0},
-    {name = "L0",           s=0x1A, e=0x1F, fmt="L0:0X%02X",	MATCHED=0},
-    {name = "L1",           s=0x20, e=0x25, fmt="L1:0X%02X",	MATCHED=0},
-    {name = "L2",           s=0x26, e=0x2B, fmt="L2:0X%02X",	MATCHED=0},
-    {name = "L3",           s=0x2C, e=0x31, fmt="L3:0X%02X",	MATCHED=0},
-    {name = "L4",           s=0x32, e=0x37, fmt="L4:0X%02X",	MATCHED=0},
-    {name = "L5",           s=0x38, e=0x3D, fmt="L5:0X%02X",	MATCHED=0},
-    {name = "L6",           s=0x3E, e=0x43, fmt="L6:0X%02X",	MATCHED=0},
-    {name = "L7",           s=0x44, e=0x49, fmt="L7:0X%02X",	MATCHED=0},
-    {name = "L8",           s=0x4A, e=0x4F, fmt="L8:0X%02X",	MATCHED=0},
-    {name = "wafer",        s=0x50, e=0x55, fmt="wafer:%d",		MATCHED=0},
-    {name = "fab",          s=0x56, e=0x5A, fmt="fab:0X%X",		MATCHED=0},
-    {name = "foundry",      s=0x5B, e=0x5F, fmt="foundry:0X%X",	MATCHED=0},
-    {name = "jtagID",       s=0x60, e=0x6E, fmt="jtagID:0X%X",	MATCHED=0},
-    {name = "OVF",          s=0x6F, e=0x6F, fmt="OVF:0X%X",		MATCHED=0},
-    {name = "sub",          s=0x70, e=0x71, fmt="sub:0X%X",		MATCHED=0},
-    {name = "min0",         s=0x72, e=0x73, fmt="min0:0X%X",	MATCHED=0},
-    {name = "maj",          s=0x74, e=0x75, fmt="maj:0X%X",		MATCHED=0},
-    {name = "custom",       s=0x76, e=0x7B, fmt="custom:0X%X",	MATCHED=0},
-    {name = "timestamp",    s=0x80, e=0x9F, fmt="timestamp Code:%d",MATCHED=0},
-    {name = "b1",           s=0x7C, e=0x7F, fmt="b1:0x%02X",	MATCHED=0},
-    {name = "S1",           s=0xA0, e=0xA5, fmt="S1:0x%02X",	MATCHED=0},
-    {name = "CRC1",         s=0xA6, e=0xAD, fmt="CRC1:0x%02X",	MATCHED=0},
-    {name = "B2",           s=0xAE, e=0xB1, fmt="B2:0x%02X",	MATCHED=0},
-    {name = "S2",           s=0xB2, e=0xB7, fmt="S2:0x%02X",	MATCHED=0},
-    {name = "CRC2",         s=0xB8, e=0xBB, fmt="CRC2:0x%02X",	MATCHED=0},
-    {name = "B3",           s=0xBC, e=0xBF, fmt="B3:0x%02X",	MATCHED=0},
-    {name = "S3",           s=0xC0, e=0xC3, fmt="S3:0x%02X",	MATCHED=0},
-    {name = "CRC3",         s=0xC4, e=0xC7, fmt="CRC3:0x%02X",	MATCHED=0},
-    {name = "B4",           s=0xC8, e=0xCB, fmt="B4:0x%02X",	MATCHED=0},
-    {name = "S4",           s=0xCC, e=0xCF, fmt="S4:0x%02X",	MATCHED=0},
-    {name = "CRC4",         s=0xD0, e=0xD3, fmt="CRC4:0x%02X",	MATCHED=0},
-    {name = "B5",           s=0xD4, e=0xD7, fmt="B5:0x%02X",	MATCHED=0},
-    {name = "S5",           s=0xD8, e=0xDB, fmt="S5:0x%02X",	MATCHED=0},
-    {name = "CRC5",         s=0xDC, e=0xDF, fmt="CRC5:0x%02X",	MATCHED=0},
-    {name = "B6",           s=0x1F4, e=0x1F7, fmt="B6:0x%02X",	MATCHED=0},
-    {name = "S6",           s=0x1F8, e=0x1FB, fmt="S6:0x%02X",	MATCHED=0},
-    {name = "CRC6",         s=0x1FC, e=0x1FF, fmt="CRC6:0x%02X",MATCHED=0},
-    {name = "DAC_MODE",  s=0x100, e=0x100, fmt="DAC_MODE:%d",MATCHED=0},
-    {name = "DAC_CAL",       s=0x102, e=0x105, fmt="DAC_CAL:%d",	MATCHED=0},
-    {name = "AVEEPOINT",    s=0x106, e=0x10F, fmt="AVEEPOINT:%d",MATCHED=0},
-    {name = "DAC_POINTA",       s=0x110, e=0x11B, fmt="DAC_POINTA:%d",	MATCHED=0},
-    {name = "DAC_POINTB",       s=0x11C, e=0x127, fmt="DAC_POINTB:%d",	MATCHED=0},
-    {name = "CRCforDACBlock",s=0x128, e=0x12F, fmt="CRCforDACBlock:%d",	MATCHED=0},
-    {name = "BANDGAP",  s=0x130, e=0x133, fmt="BANDGAP:%d",	MATCHED=0},
-    {name = "TSENSOR_TEMP",  s=0x134, e=0x13F, fmt="TSENSOR_TEMP:%d",	MATCHED=0},
-    {name = "TSENSOR_ADC1Q", s=0x140, e=0x149, fmt="TSENSOR_ADC1Q:%d",MATCHED=0},
-    {name = "TSENSOR_ADC3Q", s=0x14A, e=0x153, fmt="TSENSOR_ADC3Q:%d",MATCHED=0},
-    {name = "TSENSOR_CODEA",  s=0x154, e=0x15F, fmt="TSENSOR_CODEA:%d",	MATCHED=0},
-    {name = "TSENSOR_CODEB",  s=0x160, e=0x16B, fmt="TSENSOR_CODEB:%d",	MATCHED=0},
-    {name = "CRCforTempSensorBlock", s=0x170, e=0x177, fmt="CRCforTempSensorBlock:%d",MATCHED=0},
-    {name = "FSEL",         s=0x180, e=0x181, fmt="FSEL:%d",	MATCHED=0},
-    {name = "FTUNE",        s=0x182, e=0x184, fmt="FTUNE:%d",	MATCHED=0},
-    {name = "clk_term90",   s=0x190, e=0x192, fmt="clk_term90:%d",MATCHED=0},
-    {name = "clk_term270",  s=0x193, e=0x195, fmt="clk_term270:%d",MATCHED=0},
-    {name = "data_term90",  s=0x196, e=0x198, fmt="data_term90:%d",MATCHED=0},
-    {name = "data_term270", s=0x199, e=0x19B, fmt="data_term270:%d",MATCHED=0},
-    {name = "LundyuLED",    s=0x1EF, e=0x1EF, fmt="LundyuLED:%d",MATCHED=0},
-    {name = "I2CID",        s=0x1F0, e=0x1F1, fmt="I2CID:%d",MATCHED=0}
-    }
+Temperature_TRIM_buf = {
+	0x72,       --1stP
+	0x10,       --2ndP
+	0x10,       --3rdP
+	0x10,       --4thP
+	0x20,       --5thP
+	0x10,       --6thP
+	0x10,       --7thP
+	0x25,       --8thP
+	0x0A,       --9thP
+	0x0A,       --10thP
+	0x03,       --11thP
+	0x11,       --12thP
+	0x20,       --13thP
+	0x01,       --14thP  PBIAS_IPXL_TRIM[8]
+	0x00,       --15thP  PBIAS_IPXL_TRIM[7:0]
+	0x08,       --16thP
+	0x08,       --17thP
+	0x10,       --18thP
+	0x00,       --19thP
+	0x00,       --20thP
+	0x00,       --21thP
+	0x00,       --22thP
+	0x00,       --23thP
+	0x00,       --24thP
+	0x20,       --25thP
+	0x20,       --26thP
+	0x20,       --27thP
+	0x20,       --28thP
+	0x88,       --29thP
+	TSL_TRIM_High, --30thP TSL_TRIM_TARGET[9:8]
+	TSL_TRIM_Low, --31thP	TSL_TRIM_TARGET[7:0]
+	TSR_TRIM_High, --32thP TSR_TRIM_TARGET[9:8]
+	TSR_TRIM_Low, --33thp  TSR_TRIM_TARGET[7:0]
+	0x00        --34thp
+}
 
-
-
-function datalog_results(tittle, tb)
-	println("%s: \n{",tittle)
-	for k,v in pairs(tb) do
-		println("%s = %s",k,v)
-
-	end
-	println("}")
-end
 
 function Set_TEST_MODE(Test_Mode)
-	if Test_Mode=="MT" or Test_Mode=="CP2" then
-		TEST_MODE=Test_Mode
-		LOG.DEBUG("Test Mode:"..Test_Mode)
+	if Test_Mode == "MT" or Test_Mode == "CP2" then
+		TEST_MODE = Test_Mode
+		LOG.DEBUG("Test Mode:" .. Test_Mode)
 	else
-		TEST_MODE="MT"
-		LOG.DEBUG("Test Mode:"..Test_Mode)
+		TEST_MODE = "MT"
+		LOG.DEBUG("Test Mode:" .. Test_Mode)
 	end
 
 	RestInit()
 	Set_IO_TEST_MODE()
 end
 
---1.0 Power Shorts Test-ready
---Purpose: Checks if there are any gross shorts on the Power pins of the device.
---Test Sequence
---1. Set all IO to 0V.
---2. Set all positive power supply pins to 0.1V, AVEE to –0.1V and all clamp to 10mA 
---3. Measure & Report current at VDD10,VDD18,AVEE,VQPS
---4. Power down power rail.
---Pass Fail Criteria
---Current measurement limits:
---a. Low Limit: 0 mA
---b. High Limit: 1 mA
-
-function F_28M2_OSTest()
-	local tim1 = TIME.TICK()
-	TIME.DELAY(500)
-
-	-- 1. Set all IO to 0V.
-	-- 2. Set all positive power supply pins to 0.1V, AVEE to –0.1V and all clamp to 10mA 
-	local ret = 1
-	local os_short = "Pass"
-	local os_table = {}
-	local VOLTAGE_VALUE = 100 --mV
-	local VOLTAGE_CLAMP = 200 --mV
-	local CURRENT_CLAMP = 20*1000*1000 --nA
-	local UNDER_VOLTAGE_PROTECTIVE = 0 --mV
-	local UNDER_CURRENT_PROTECTIVE = 0  --mV
-	local Current_table ={}
-	
-	
-	for i = IIC_SLV_Defaul,IIC_SLV_B do 
-		IIC_CONFIG.SLAVE_ADDR = i
-		IIC_CONFIG.init_default()
-		TIME.DELAY(100)
-		if i == IIC_SLV_Defaul then
-			POWER_ON()
-		end
-		ret,tb = I2C_Communication_Test()
-		if ret == 0 then
-			break
-		end
-		
-	end
-
-	POWER_OFF()
-	TIME.DELAY(200)
-	
-	println("=================POWER_SHORTS=========================")
-	local VQPS_DATA = {
-		VOLTAGE = 0.0,    -- volts
-		CURRENT = 0.0,    -- amps
-	}
-	local VDD10_DATA = {
-		VOLTAGE = 0.0,    -- volts
-		CURRENT = 0.0,    -- amps
-	}
-	local VDD18_DATA = {
-		VOLTAGE = 0.0,    -- volts
-		CURRENT = 0.0,    -- amps
-	}
-	local AVEE_DATA = {
-		VOLTAGE = 0.0,    -- volts
-		CURRENT = 0.0,    -- amps
-	}
-	--VQPS
-	POWER_CHANNEL_VALUE(P_VQPS, ON, VOLTAGE_VALUE, VOLTAGE_CLAMP, CURRENT_CLAMP)
-	--VDD18
-	POWER_CHANNEL_VALUE(P_VDD18, ON, VOLTAGE_VALUE , VOLTAGE_CLAMP, CURRENT_CLAMP)
-	--VDD10
-	POWER_CHANNEL_VALUE(P_VDD10, ON, VOLTAGE_VALUE, VOLTAGE_CLAMP, CURRENT_CLAMP)
-	--AVEE
-	POWER_CHANNEL_VALUE(P_AVEE, ON, -VOLTAGE_VALUE, -VOLTAGE_CLAMP, CURRENT_CLAMP)
-
-	TIME.DELAY(200)
-	--3. Measure & Report current at VDD10,VDD18,AVEE,VQPS
-	VQPS_DATA.VOLTAGE, VQPS_DATA.CURRENT=POWER.VOL_CUR(P_VQPS)
-	VDD18_DATA.VOLTAGE, VDD18_DATA.CURRENT=POWER.VOL_CUR(P_VDD18)
-	VDD10_DATA.VOLTAGE, VDD10_DATA.CURRENT=POWER.VOL_CUR(P_VDD10)
-	AVEE_DATA.VOLTAGE, AVEE_DATA.CURRENT=POWER.VOL_CUR(P_AVEE)
-	
-	VQPS_DATA.CURRENT  = VQPS_DATA.CURRENT/1000
-	VDD18_DATA.CURRENT = VDD18_DATA.CURRENT/1000
-	VDD10_DATA.CURRENT = VDD10_DATA.CURRENT/1000
-	AVEE_DATA.CURRENT  = AVEE_DATA.CURRENT/1000
-	
-	--POWER_OFF()
-	
-	LOG.INFO(string.format("VQPS_DATA :%.4fV, %.4fuA",VQPS_DATA.VOLTAGE, VQPS_DATA.CURRENT))
-	LOG.INFO(string.format("VDD18_DATA:%.4fV, %.4fuA",VDD18_DATA.VOLTAGE, VDD18_DATA.CURRENT))
-	LOG.INFO(string.format("VDD10_DATA:%.4fV, %.4fuA",VDD10_DATA.VOLTAGE, VDD10_DATA.CURRENT))
-	LOG.INFO(string.format("AVEE_DATA :%.4fV, %.4fuA",AVEE_DATA.VOLTAGE, AVEE_DATA.CURRENT))
-		
-	Current_table = {VDD18_DATA.CURRENT, VDD10_DATA.CURRENT, AVEE_DATA.CURRENT, VQPS_DATA.CURRENT}
-	--table.insert(Current_table,VDD18_DATA.CURRENT)
-	--table.insert(Current_table,VDD10_DATA.CURRENT)
-	--table.insert(Current_table,AVEE_DATA.CURRENT)
-	--table.insert(Current_table,VQPS_DATA.CURRENT)
-	
-	for i=1, #Current_table, 1 do
-	
-		cur = Current_table[i] / 1000
-		if cur > 10 then --10mA
-			os_short = "Fail"
-			ret = 0
-		end
-	end
-
-	
-	local current_data = cjson.encode(Current_table)
-	LOG.INFO(current_data)
-	
-	println("=================IO_Continuity_Test=========================")
-	
-	local io_continuity = "Pass"
-	local io_continuity_table = {}
-	local io_continuity_curent = -100
-	POWER_OFF()
-	TIME.DELAY(200)
-	
-	io_continuity_table = PPMU_IO_CHANNEL_TEST(io_continuity_curent)
-	
-	local io_continuity_data = cjson.encode(io_continuity_table)
-	if io_continuity_data:find("OPEN") or io_continuity_data:find("CLOSE") or io_continuity_data:find("NG") then
-		LOG.ERROR("PPMU_IO_TEST NG")
-		ret = 0
-		io_continuity = "Fail"
-	end
-	LOG.INFO(io_continuity_data)
-	
-	os_table = {os_short, io_continuity}
-	println("测试时间：%f S",(TIME.TICK() - tim1)/1000)
-	return ret,os_table
-	
-
-end
---pinlist = {2,3,4,6}
---POWER_SHORTS(-100, 350, pinlist)
-
+--VQPS(ON)
+--[[
+Function: Power_Shorts_Test
+Desc: Pinot power pin short test using PPMU. Apply low voltage and clamp current to detect short circuit.
+Input:
+    Volt    : Test voltage(mV). Nil for default parallel mode.
+    delay   : Stabilize delay(ms). Nil for default parallel mode.
+    pinlist : Channel list table. Nil for default parallel mode.
+Return:
+    0       : Function execute status, 0 = success
+    Power_name : Json string of power rail names
+    voltage    : Json string of measured voltage array
+    current    : Json string of measured current array(mA)
+--]]
 function Power_Shorts_Test(Volt, delay, pinlist)
 	-- 1. Set all IO to 0V.
-	-- 2. Set all positive power supply pins to 0.1V, AVEE to –0.1V and all clamp to 10mA 
-	local result_table ={}
-	local Power_name={}
-	local voltage={}
-	local current={}
-	
-	if Volt==nil or delay==nil or pinlist==nil then
-		local VOLTAGE_VALUE = 100 --mV
-		local VOLTAGE_CLAMP = 200 --mV
-		local CURRENT_CLAMP = 200*1000*1000 --nA
+	-- 2. Set all positive power supply pins to 0.1V, AVEE to –0.1V and all clamp to 10mA
+	local result_table = {}
+	local Power_name = {}
+	local voltage = {}
+	local current = {}
+
+	if Volt == nil or delay == nil or pinlist == nil then
+		local VOLTAGE_VALUE = 100        --mV
+		local VOLTAGE_CLAMP = 200        --mV
+		local CURRENT_CLAMP = 20 * 1000 * 1000 --nA
 		local UNDER_VOLTAGE_PROTECTIVE = 0 --mV
-		local UNDER_CURRENT_PROTECTIVE = 0  --mV
+		local UNDER_CURRENT_PROTECTIVE = 0 --mV
 		--local result_table ={}
 		local VQPS_DATA_VOLTAGE = 0.0
 		local VDD10_DATA_VOLTAGE = 0.0
 		local VDD18_DATA_VOLTAGE = 0.0
 		local AVEE_DATA_VOLTAGE = 0.0
 		local AVDD18_DATA_VOLTAGE = 0.0 --20251222 add
-		
+
 		local VQPS_DATA_CURRENT = 0.0
 		local VDD10_DATA_CURRENT = 0.0
 		local VDD18_DATA_CURRENT = 0.0
 		local AVEE_DATA_CURRENT = 0.0
 		local AVDD18_DATA_CURRENT = 0.0 --20251222 add
-		
-		PPMU_IO_ALL_MODE(PPMU_MODE_TABLE.GND)
-    
+
+		PPMU_IO_ALL_MODE(PPMU_MODE_TABLE.NC)
+		--PPMU.RELAY_CLOSE(CHANNEL_TAB.GPIO6_A)
+		--PPMU.RELAY_CLOSE(CHANNEL_TAB.GPIO7_A)
+
 		PPMU.RELAY_CLOSE(CHANNEL_TAB.VQPS_OUT)
 		PPMU.RELAY_CLOSE(CHANNEL_TAB.VDDIO_OUT)
 		PPMU.RELAY_CLOSE(CHANNEL_TAB.DVDD_OUT)
 		PPMU.RELAY_CLOSE(CHANNEL_TAB.AVEE1_OUT)
-		if TEST_MODE=="MT" then
-			POWER.MULTI_SET(
-		    { channel = P_VQPS,			en=1, range = 0x85, mode = 0, vol = 200, ovp = 300, uvp = 0, ocp = 200*1000*100, ucp = 0 },
-		    { channel = P_VDD18,		en=1, range = 0x85, mode = 0, vol = 150, ovp = 250, uvp = 0, ocp = 200*1000*80,  ucp = 0 },
-		    { channel = P_VDD10,		en=1, range = 0x85, mode = 0, vol = 100, ovp = 200, uvp = 0, ocp = 200*1000*80,  ucp = 0 },
-		    { channel = P_AVEE,			en=1, range = 0x85, mode = 0, vol = -100, ovp = 200, uvp = 0, ocp = 200*1000*80,  ucp = 0 }
-			)
-			
-		elseif TEST_MODE=="CP2" then
-			PPMU.RELAY_CLOSE(CHANNEL_TAB.AVDD_OUT)
-			POWER.MULTI_SET(
-		    { channel = P_VQPS,			en=1, range = 0x85, mode = 0, vol = 200, ovp = 300, uvp = 0, ocp = 200*1000*100, ucp = 0 },
-		    { channel = P_VDD18,		en=1, range = 0x85, mode = 0, vol = 150, ovp = 250, uvp = 0, ocp = 200*1000*80,  ucp = 0 },
-		    { channel = P_VDD10,		en=1, range = 0x85, mode = 0, vol = 100, ovp = 200, uvp = 0, ocp = 200*1000*80,  ucp = 0 },
-		    { channel = P_AVDD18,		en=1, range = 0x85, mode = 0, vol = 150, ovp = 250, uvp = 0, ocp = 200*1000*80,  ucp = 0 },
-		    { channel = P_AVEE,			en=1, range = 0x85, mode = 0, vol = -100, ovp = 200, uvp = 0, ocp = 200*1000*80,  ucp = 0 }
-			)
-		
-		end
 
-		TIME.DELAY(80)--
-		--3. Measure & Report current at VDD10,VDD18,AVEE,VQPS
-		VQPS_DATA_VOLTAGE, VQPS_DATA_CURRENT=POWER.VOL_CUR(P_VQPS)
-		VDD18_DATA_VOLTAGE, VDD18_DATA_CURRENT=POWER.VOL_CUR(P_VDD18)
-		VDD10_DATA_VOLTAGE, VDD10_DATA_CURRENT=POWER.VOL_CUR(P_VDD10)
-		AVDD18_DATA_VOLTAGE,AVDD18_DATA_CURRENT=POWER.VOL_CUR(P_AVDD18)--20251222add
-		AVEE_DATA_VOLTAGE, AVEE_DATA_CURRENT=POWER.VOL_CUR(P_AVEE)
-		
-		VQPS_DATA_CURRENT  = VQPS_DATA_CURRENT/1e6
-		VDD10_DATA_CURRENT = VDD10_DATA_CURRENT/1e6
-		VDD18_DATA_CURRENT = VDD18_DATA_CURRENT/1e6
-		AVEE_DATA_CURRENT  = AVEE_DATA_CURRENT/1e6
-		AVDD18_DATA_CURRENT = AVDD18_DATA_CURRENT/1e6--20251222add
-		
-		--POWER_OFF()
+		PPMU.RELAY_CLOSE(CHANNEL_TAB.AVDD_OUT)
 		POWER.MULTI_SET(
-		    { channel = P_VQPS,			en=0, range = 0x85, mode = 0, vol = 0, ovp = 300, uvp = 0, ocp = 1000*1000*100, ucp = 0 },
-		    { channel = P_VDD18,		en=0, range = 0x85, mode = 0, vol = 0, ovp = 250, uvp = 0, ocp = 1000*1000*80,  ucp = 0 },
-		    { channel = P_VDD10,		en=0, range = 0x85, mode = 0, vol = 0, ovp = 200, uvp = 0, ocp = 1000*1000*80,  ucp = 0 },
-		    { channel = P_AVDD18,		en=0, range = 0x85, mode = 0, vol = 0, ovp = 250, uvp = 0, ocp = 1000*1000*80,  ucp = 0 },
-		    { channel = P_AVEE,			en=0, range = 0x85, mode = 0, vol = 0, ovp = 200, uvp = 0, ocp = 1000*1000*80,  ucp = 0 }
+			{ channel = P_VQPS, en = 1, range = 0x85, mode = 0, vol = 200, ovp = 300, uvp = 0, ocp = 200 * 1000 * 100, ucp = 0 },
+			{ channel = P_VDD18, en = 1, range = 0x85, mode = 0, vol = 150, ovp = 250, uvp = 0, ocp = 200 * 1000 * 80, ucp = 0 },
+			{ channel = P_VDD10, en = 1, range = 0x85, mode = 0, vol = 100, ovp = 650, uvp = 0, ocp = 200 * 1000 * 80, ucp = 0 },
+			{ channel = P_AVDD18, en = 1, range = 0x85, mode = 0, vol = 100, ovp = 250, uvp = 0, ocp = 200 * 1000 * 80, ucp = 0 },
+			{ channel = P_AVEE, en = 1, range = 0x85, mode = 0, vol = -100, ovp = 200, uvp = 0, ocp = 200 * 1000 * 80, ucp = 0 }
 		)
-		PPMU_IO_ALL_MODE(PPMU_MODE_TABLE.NC)
-		
-		if TEST_MODE=="MT" then
-		
-			LOG.INFO(string.format("VQPS_DATA :%.4fV, %.4fmA",VQPS_DATA_VOLTAGE, VQPS_DATA_CURRENT))
-			LOG.INFO(string.format("VDD18_DATA:%.4fV, %.4fmA",VDD18_DATA_VOLTAGE, VDD18_DATA_CURRENT))
-			LOG.INFO(string.format("VDD10_DATA:%.4fV, %.4fmA",VDD10_DATA_VOLTAGE, VDD10_DATA_CURRENT))
-			LOG.INFO(string.format("AVEE_DATA :%.4fV, %.4fmA",AVEE_DATA_VOLTAGE, AVEE_DATA_CURRENT))
-			
-			table.insert(result_table,VQPS_DATA_CURRENT)
-			table.insert(result_table,VDD10_DATA_CURRENT)
-			table.insert(result_table,VDD18_DATA_CURRENT)
-			table.insert(result_table,AVEE_DATA_CURRENT)
-		
-		else
-			LOG.INFO(string.format("VQPS_DATA :%.4fV, %.4fmA",VQPS_DATA_VOLTAGE, VQPS_DATA_CURRENT))
-			LOG.INFO(string.format("VDD18_DATA:%.4fV, %.4fmA",VDD18_DATA_VOLTAGE, VDD18_DATA_CURRENT))
-			LOG.INFO(string.format("VDD10_DATA:%.4fV, %.4fmA",VDD10_DATA_VOLTAGE, VDD10_DATA_CURRENT))
-			LOG.INFO(string.format("AVEE_DATA :%.4fV, %.4fmA",AVEE_DATA_VOLTAGE, AVEE_DATA_CURRENT))
-			LOG.INFO(string.format("AVDD18_DATA :%.4fV, %.4fmA",AVDD18_DATA_VOLTAGE, AVDD18_DATA_CURRENT))--20251222add
-			
-			table.insert(result_table,VQPS_DATA_CURRENT)
-			table.insert(result_table,VDD10_DATA_CURRENT)
-			table.insert(result_table,VDD18_DATA_CURRENT)
-			table.insert(result_table,AVEE_DATA_CURRENT)
-			table.insert(result_table,AVDD18_DATA_CURRENT)--20251222add
-		
-		end
-		
 
-		
-		--Power_name=cjson.encode({"VPQS","VDD18","VDD10","AVEE","AVDD18"})
-		--LOG.INFO(Power_name)
-		--voltage=cjson.encode({VQPS_DATA_VOLTAGE,VDD18_DATA_VOLTAGE,VDD10_DATA_VOLTAGE,AVEE_DATA_VOLTAGE,AVDD18_DATA_VOLTAGE})
-		--LOG.INFO(voltage)
-		--current=cjson.encode({VQPS_DATA_CURRENT,VDD18_DATA_CURRENT,VDD10_DATA_CURRENT,AVEE_DATA_CURRENT,AVDD18_DATA_CURRENT})
-		--LOG.INFO(current)
-		local json_data = cjson.encode(result_table)
-		LOG.INFO(json_data)
-		return 0, json_data
+
+		TIME.DELAY(300)
+		--3. Measure & Report current at VDD10,VDD18,AVEE,VQPS
+		VQPS_DATA_VOLTAGE, VQPS_DATA_CURRENT     = POWER.VOL_CUR(P_VQPS)
+		VDD18_DATA_VOLTAGE, VDD18_DATA_CURRENT   = POWER.VOL_CUR(P_VDD18)
+		VDD10_DATA_VOLTAGE, VDD10_DATA_CURRENT   = POWER.VOL_CUR(P_VDD10)
+		AVDD18_DATA_VOLTAGE, AVDD18_DATA_CURRENT = POWER.VOL_CUR(P_AVDD18) --20251222add
+		AVEE_DATA_VOLTAGE, AVEE_DATA_CURRENT     = POWER.VOL_CUR(P_AVEE)
+
+		VQPS_DATA_CURRENT                        = VQPS_DATA_CURRENT / 1e6
+		VDD10_DATA_CURRENT                       = VDD10_DATA_CURRENT / 1e6
+		VDD18_DATA_CURRENT                       = VDD18_DATA_CURRENT / 1e6
+		AVEE_DATA_CURRENT                        = AVEE_DATA_CURRENT / 1e6
+		AVDD18_DATA_CURRENT                      = AVDD18_DATA_CURRENT / 1e6 --20251222add
+
+		POWER_OFF()
+
+		LOG.INFO(string.format("VQPS_DATA :%.4fV, %.4fmA", VQPS_DATA_VOLTAGE, VQPS_DATA_CURRENT))
+		LOG.INFO(string.format("VDD18_DATA:%.4fV, %.4fmA", VDD18_DATA_VOLTAGE, VDD18_DATA_CURRENT))
+		LOG.INFO(string.format("VDD10_DATA:%.4fV, %.4fmA", VDD10_DATA_VOLTAGE, VDD10_DATA_CURRENT))
+		LOG.INFO(string.format("AVEE_DATA :%.4fV, %.4fmA", AVEE_DATA_VOLTAGE, AVEE_DATA_CURRENT))
+		LOG.INFO(string.format("AVDD18_DATA :%.4fV, %.4fmA", AVDD18_DATA_VOLTAGE, AVDD18_DATA_CURRENT)) --20251222add
+
+		table.insert(result_table, VQPS_DATA_CURRENT)
+		table.insert(result_table, VDD10_DATA_CURRENT)
+		table.insert(result_table, VDD18_DATA_CURRENT)
+		table.insert(result_table, AVEE_DATA_CURRENT)
+		table.insert(result_table, AVDD18_DATA_CURRENT) --20251222add
+
+		Power_name = cjson.encode({ "VPQS", "VDD18", "VDD10", "AVEE", "AVDD18" })
+		LOG.INFO(Power_name)
+		voltage = cjson.encode({ VQPS_DATA_VOLTAGE, VDD18_DATA_VOLTAGE, VDD10_DATA_VOLTAGE, AVEE_DATA_VOLTAGE,
+			AVDD18_DATA_VOLTAGE })
+		LOG.INFO(voltage)
+		current = cjson.encode({ VQPS_DATA_CURRENT, VDD18_DATA_CURRENT, VDD10_DATA_CURRENT, AVEE_DATA_CURRENT,
+			AVDD18_DATA_CURRENT })
+		LOG.INFO(current)
 	else
 		local VOLTAGE_VALUE = Volt
 		local delaytime = delay
 		--local power_pchannel = pinlist
-		local VOLTAGE_CLAMP = 200 --mV
-		local CURRENT_CLAMP = 20*1000*1000 --nA
+		local VOLTAGE_CLAMP = 200        --mV
+		local CURRENT_CLAMP = 20 * 1000 * 1000 --nA
 		local DATA_VOLTAGE = 0.0
 		local DATA_CURRENT = 0.0
-		for k,v in pairs(pinlist) do
-			POWER_CHANNEL_VALUE(v, ON,VOLTAGE_VALUE, VOLTAGE_CLAMP, CURRENT_CLAMP)
+		for k, v in pairs(pinlist) do
+			POWER_CHANNEL_VALUE(v, ON, VOLTAGE_VALUE, VOLTAGE_CLAMP, CURRENT_CLAMP)
 			TIME.DELAY(delaytime)
-			
-			DATA_VOLTAGE, DATA_CURRENT=POWER.VOL_CUR(v)
-			DATA_CURRENT  = DATA_CURRENT/1e6
-			LOG.INFO(string.format("CHANNLE:%d,VQPS_DATA :%.4fV, %.4fmA",v,DATA_VOLTAGE, DATA_CURRENT))
-			table.insert(result_table,DATA_CURRENT)
-			
-			POWER_CHANNEL_VALUE(v, OFF,VOLTAGE_VALUE, VOLTAGE_CLAMP, CURRENT_CLAMP)
+
+			DATA_VOLTAGE, DATA_CURRENT = POWER.VOL_CUR(v)
+			DATA_CURRENT               = DATA_CURRENT / 1e6
+			LOG.INFO(string.format("CHANNLE:%d,VQPS_DATA :%.4fV, %.4fmA", v, DATA_VOLTAGE, DATA_CURRENT))
+			table.insert(result_table, DATA_CURRENT)
+
+			POWER_CHANNEL_VALUE(v, OFF, VOLTAGE_VALUE, VOLTAGE_CLAMP, CURRENT_CLAMP)
 		end
-		
-		
 	end
-	
+
 	--local json_data = cjson.encode(result_table)
 	--LOG.INFO(json_data)
-	return 0,Power_name,voltage,current
+	return 0, Power_name, voltage, current
 end
---IO_Continuity_Test({200}, 50, 10)
+
+--[[
+Function: IO_Continuity_Test
+Desc: Pinot IO continuity test by PPMU. Force +/- current and measure voltage to check open/short.
+Input:
+    current : Test current(uA). Nil for default full pin test.
+    delay   : Stabilize delay(ms). Nil for default full pin test.
+    pinlist : Target pin channel. Nil for default full pin test.
+Return:
+    0       : Success
+    pin_table: Json of pin name list
+    current_table: Json of forced current list
+    voltage_table: Json of measured voltage list
+    Return 1 if NG found(OPEN/CLOSE/NG keyword in voltage result)
+--]]
 function IO_Continuity_Test(current, delay, pinlist)
 	--Test Sequence
 	--1. Set all power rail to 0V
@@ -451,491 +237,127 @@ function IO_Continuity_Test(current, delay, pinlist)
 	--a. Connect one pin to PMU, Force 200uA, clamp 1.5V report voltage. Exp pass range(0.2~1.1V)
 	--b. Force –200uA, CLAMP -1.5v, report voltage. Exp pass range(-0.2~-1.1V)
 	--c. Connect this pin back to GND
-	
-	local time1=TIME.TICK()
 	local result_table = {}
 	local result_table1 = {}
-	local curent={}
-	--POWER_OFF()
-	--TIME.DELAY(200)
-	if current==nil or delay==nil or pinlist==nil then
-		local curent = {200,-200}
-		
-		result_table = PPMU_IO_CHANNEL_TEST(curent,delay)
+	local pin_table = {}
+	local voltage_table = {}
+	local current_table = {}
 	
+	POWER_OFF()
+
+	TIME.DELAY(100)
+	if current == nil or delay == nil or pinlist == nil then
+		local curent = { -200, 200 }
+
+		pin_table, current_table, voltage_table = PPMU_IO_CHANNEL_TEST(curent, delay)
 	else
 		--local curent = -100
-		
-			
-			for c,b in pairs(current) do
-				local ioname=""
-				for k,v in pairs(IO_PPMU_CHANEL_negative) do
-					if pinlist == v.PinNo then
-						ioname = v.PinName
-		
-					end
-					--LOG.INFO(string.format("no:%d",k))	
-				end
-
-				result_table1 = PPMU_IO_CHANNEL_TEST_Customize(b,pinlist,ioname,delay)
-				table.insert(result_table,result_table1)
+		local ioname = ""
+		for k, v in pairs(IO_PPMU_CHANEL_negative) do
+			if pinlist == v.PinNo then
+				ioname = v.PinName
 			end
-		
+			--LOG.INFO(string.format("no:%d",k))	
+		end
+
+		result_table1 = PPMU_IO_CHANNEL_TEST_Customize(b, pinlist, ioname, delay)
+		table.insert(result_table, result_table1)
 	end
-	
-	
-	
-	local json_data = cjson.encode(result_table)
-	if json_data:find("OPEN") or json_data:find("CLOSE") or json_data:find("NG") then
+
+	pin_table = cjson.encode(pin_table)
+	LOG.INFO(pin_table)
+	current_table = cjson.encode(current_table)
+	LOG.INFO(current_table)
+	voltage_table = cjson.encode(voltage_table)
+	LOG.INFO(voltage_table)
+
+	if voltage_table:find("OPEN") or voltage_table:find("CLOSE") or voltage_table:find("NG") then
 		LOG.ERROR("PPMU_IO_TEST NG")
-		return 1,json_data
+		return 1, voltage_table
 	end
-	LOG.INFO(json_data)
-	local time2=TIME.TICK()
-	LOG.DEBUG("测试时间"..(time2/1000 - time1/1000))
-	return 0,json_data
-	
+	return 0, pin_table, current_table, voltage_table
 end
---GPIO3_A_SET(0) 
-function MIPI_Communication_Test()
-	LOG.DEBUG("<MIPI_Communication_Test>")
+
+function DMIPI_R_A(reg, len)
+	local DATA = DMIPI.REG_R(reg, len)
+	for i = 1, len, 1 do
+		LOG.INFO(string.format("data[%d]0x%02x", i, DATA[i]))
+	end
+	return DATA
+end
+
+--GPIO3_A_SET(0)
+function MIPI_DPHY_LP_Test()
+	LOG.DEBUG("<MIPI_DPHY_LP_Test>")
 	local data_table = {}
 	local ret = 0
 	local test_data = {
 		0xAAAAAAAA,
 		0x55555555,
-		0xFFFFFFFF,
-		0x00000000,
+		0x5A5A5A5A,
+		0xA5A5A5A5,
+		0x00000000
 	}
-	
+
 	--PPMU.CAL_EN(1)
-   	--PPMU.CAL_EN(0)    --5V on
-   	TIME.DELAY(10)
-	DMIPI.VID()
-	DMIPI.HS()
+	--PPMU.CAL_EN(0)    --5V on
+	--DMIPI.VID()
+	--DMIPI.CMD()
+	DMIPI.LP()
+	--DMIPI.HS()
+	--TIME.DELAY(1000)
 	for k, v in ipairs(test_data) do
-		F_MIPI_WRITE(0x0FFC, v)
-		TIME.DELAY(10)
-		local read_data = IIC_R_PEQUIN(0x0FFC, 4)
+		F_MIPI_WRITE(0xEF, v)
+		TIME.DELAY(50)
+		
+		local read_data = IIC_R_Tab2(0xEF, 4)
+		--local read_data = DMIPI_R_A(0xEF, 4)
 		--TIME.DELAY(50)
-		--local read_data = F_READ_FOR_MIPI(0x0FFC, 4)
-		local hex_str = string.format("0x%08X",read_data)
+		--local read_data = F_READ_FOR_MIPI(0xEF, 4)
+		local hex_str = string.format("0x%08X", read_data)
 		println(hex_str)
-		table.insert(data_table,hex_str)
+		table.insert(data_table, hex_str)
 		if v ~= read_data then
 			LOG.ERROR("IIC read NG")
 			ret = -1
 		end
 	end
-	
+
 	--data_table = 0xAAAAAAAA
 	--hex_str = string.format("0x%08X",data_table)
 	local json_data = cjson.encode(data_table)
 	--LOG.INFO(json_data)
 	--local json_data = cjson.encode(data_table)
-	
+
 	LOG.INFO(json_data)
-	return ret,json_data
-	
+	return ret, json_data
 end
-
-function Idle_Power_Test()
-	local tim1 = TIME.TICK()
-	println("=================Idle_Power_Test=========================")
-	local ret = 1
-	local idle_table ={}	
-	local Power_name={}
-	local voltage={}
-	local current={}
-	
-	local VDD10_DATA_VOLTAGE = 0.0
-	local VDD18_DATA_VOLTAGE = 0.0
-	local AVDD18_DATA_VOLTAGE = 0.0 --20251222 add
-	local AVEE_DATA_VOLTAGE = 0.0
-		
-	
-	local VDD10_DATA_CURRENT = 0.0
-	local VDD18_DATA_CURRENT = 0.0
-	local AVDD18_DATA_CURRENT = 0.0 --20251222 add
-	local AVEE_DATA_CURRENT = 0.0
-	--POWER_OFF()
-	--TIME.DELAY(100)
-	POWER_ON_IDLE_POWER()
-	--TIME.DELAY(100)
-	VDD18_DATA_VOLTAGE, VDD18_DATA_CURRENT=POWER.VOL_CUR(P_VDD18)
-	VDD10_DATA_VOLTAGE, VDD10_DATA_CURRENT=POWER.VOL_CUR(P_VDD10)
-	AVDD18_DATA_VOLTAGE, AVDD18_DATA_CURRENT=POWER.VOL_CUR(P_AVDD18) --20251222 add
-	AVEE_DATA_VOLTAGE, AVEE_DATA_CURRENT=POWER.VOL_CUR(P_AVEE)
-
-	VDD18_DATA_CURRENT = VDD18_DATA_CURRENT/1e6
-	VDD10_DATA_CURRENT = VDD10_DATA_CURRENT/1e6
-	AVDD18_DATA_CURRENT = AVDD18_DATA_CURRENT/1e6
-	AVEE_DATA_CURRENT  = AVEE_DATA_CURRENT/1e6
-	
-	TOTALPOWER=(math.abs(VDD18_DATA_CURRENT*VDD18_DATA_VOLTAGE)+math.abs(VDD10_DATA_VOLTAGE*VDD10_DATA_CURRENT)+math.abs(AVDD18_DATA_CURRENT*AVDD18_DATA_VOLTAGE)+math.abs(AVEE_DATA_VOLTAGE*AVEE_DATA_CURRENT))
-	TOTALPOWER=TOTALPOWER/1e3
-	
-	LOG.INFO(string.format("VDD18_DATA:%.4fV, %.4fmA",VDD18_DATA_VOLTAGE, VDD18_DATA_CURRENT))
-	LOG.INFO(string.format("VDD10_DATA:%.4fV, %.4fmA",VDD10_DATA_VOLTAGE, VDD10_DATA_CURRENT))
-	LOG.INFO(string.format("AVDD18_DATA:%.4fV, %.4fmA",AVDD18_DATA_VOLTAGE, AVDD18_DATA_CURRENT))
-	LOG.INFO(string.format("AVEE_DATA :%.4fV, %.4fmA",AVEE_DATA_VOLTAGE, AVEE_DATA_CURRENT))
-	LOG.INFO(string.format("TOTALPOWER :%.4fV",TOTALPOWER))
-	--POWER_OFF()
-	table.insert(idle_table,math.abs(VDD18_DATA_CURRENT))
-	table.insert(idle_table,math.abs(VDD10_DATA_CURRENT))
-	table.insert(idle_table,math.abs(AVDD18_DATA_CURRENT))
-	table.insert(idle_table,AVEE_DATA_CURRENT)
-	table.insert(idle_table,TOTALPOWER)
-
-	
-	local idle_table_data = cjson.encode(idle_table)
-	LOG.INFO(idle_table_data)
-	
-	--println("测试时间：%f S",(TIME.TICK() - tim1)/1000)
-	--return 0,Power_name,voltage,current
-	return 0,idle_table_data
-
-
-end
-
-function Idle_Power_Vmin_Test()
-	local tim1 = TIME.TICK()
-	println("=================Idle_Power_Vnim_Test=========================")
-	local ret = 1
-	local idle_table ={}
-	local Power_name={}
-	local voltage={}
-	local current={}
-
-	
-	local VDD10_DATA_VOLTAGE = 0.0
-	local VDD18_DATA_VOLTAGE = 0.0
-	local AVDD18_DATA_VOLTAGE = 0.0 --20251222 add
-	local AVEE_DATA_VOLTAGE = 0.0
-		
-	
-	local VDD10_DATA_CURRENT = 0.0
-	local VDD18_DATA_CURRENT = 0.0
-	local AVDD18_DATA_CURRENT = 0.0 --20251222 add
-	local AVEE_DATA_CURRENT = 0.0
-	--POWER_OFF()
-	--TIME.DELAY(100)
-	POWER_ON_IDLE_POWER_Min()
-	--TIME.DELAY(100)
-	VDD18_DATA_VOLTAGE, VDD18_DATA_CURRENT=POWER.VOL_CUR(P_VDD18)
-	VDD10_DATA_VOLTAGE, VDD10_DATA_CURRENT=POWER.VOL_CUR(P_VDD10)
-	AVDD18_DATA_VOLTAGE, AVDD18_DATA_CURRENT=POWER.VOL_CUR(P_AVDD18) --20251222 add
-	AVEE_DATA_VOLTAGE, AVEE_DATA_CURRENT=POWER.VOL_CUR(P_AVEE)
-	
-
-	VDD18_DATA_CURRENT = VDD18_DATA_CURRENT/1e6
-	VDD10_DATA_CURRENT = VDD10_DATA_CURRENT/1e6
-	AVDD18_DATA_CURRENT = AVDD18_DATA_CURRENT/1e6
-	AVEE_DATA_CURRENT  = AVEE_DATA_CURRENT/1e6
-	
-	LOG.INFO(string.format("VDD18_DATA:%.4fV, %.4fmA",VDD18_DATA_VOLTAGE, VDD18_DATA_CURRENT))
-	LOG.INFO(string.format("VDD10_DATA:%.4fV, %.4fmA",VDD10_DATA_VOLTAGE, VDD10_DATA_CURRENT))
-	LOG.INFO(string.format("AVDD18_DATA:%.4fV, %.4fmA",AVDD18_DATA_VOLTAGE, AVDD18_DATA_CURRENT))
-	LOG.INFO(string.format("AVEE_DATA :%.4fV, %.4fmA",AVEE_DATA_VOLTAGE, AVEE_DATA_CURRENT))
-	POWER_OFF()
-	table.insert(idle_table,math.abs(VDD18_DATA_CURRENT))
-	table.insert(idle_table,math.abs(VDD10_DATA_CURRENT))
-	table.insert(idle_table,math.abs(AVDD18_DATA_CURRENT))
-	table.insert(idle_table,math.abs(AVEE_DATA_CURRENT))
-	
-	Power_name=cjson.encode({"VDD18","VDD10","AVEE","AVDD18"})
-	LOG.INFO(Power_name)
-	voltage=cjson.encode({VDD18_DATA_VOLTAGE,VDD10_DATA_VOLTAGE,AVEE_DATA_VOLTAGE,AVDD18_DATA_VOLTAGE})
-	LOG.INFO(voltage)
-	current=cjson.encode({VDD18_DATA_CURRENT,VDD10_DATA_CURRENT,AVEE_DATA_CURRENT,AVDD18_DATA_CURRENT})
-	LOG.INFO(current)
-	
-	--local idle_table_data = cjson.encode(idle_table)
-	--LOG.INFO(idle_table_data)
-	
-	println("测试时间：%f S",(TIME.TICK() - tim1)/1000)
-	return 0,Power_name,voltage,current
-
-
-end
-
---舜禹
-function EFuse_PreRead()
-	local tim1 = TIME.TICK()
-	println("=================EFuse_DieID_Read=========================")
-	local ret = 0
-	local dieid_table = {}
-	local Efuse_data = {}
-	local bitStream1 = "0x"
-	local bitStream2 = "0x"
-	local bitStream3 = "0x"
-	local results_tables = {}
-	
-	Efuse_data = EFuse_full_bank_read()
-	
-	local Efuse_str= CombineEfuseToHexStr(Efuse_data)
-
-	results_tables=dumpEfuse(Efuse_str)
-	println("测试时间：%f S",(TIME.TICK() - tim1)/1000)
-	local idle_table_data = cjson.encode(results_tables)
-	LOG.INFO(idle_table_data)
-	return ret, idle_table_data
-end
-
-
-function dumpEfuse(Efuse_str)
-
-    -- 初始化存储
-    local results_table = {}
-    -- 核心循环（遍历 efuse_field 表）
-    for _, field in ipairs(efuse_field) do
-        -- 读取值
-        local val = ExtractBitsFromHex(Efuse_str, field.s, field.e)
-        raw_values[field.name] = val				--存储到全局
-        if field.MATCHED == 1 then
-        	table.insert(results_table, (val == 0x00) and 0 or 1)
-        else
-			table.insert(results_table, val)
-        end
-        println(string.format(field.fmt, val))
-    end
-
-    local LotID = string.char(
-        raw_values.L8+0x20,raw_values.L7+0x20,raw_values.L6+0x20,raw_values.L5+0x20,
-        raw_values.L4+0x20,raw_values.L3+0x20,raw_values.L2+0x20,raw_values.L1+0x20,raw_values.L0+0x20
-    )
-    println("LotID:" .. LotID)
-
-    local ts = raw_values.timestamp
-    local dateY = timestampToDateTime(0, ts, true)
-    local dateM = timestampToDateTime(1, ts, true)
-    local dateD = timestampToDateTime(2, ts, true)
-    println("DateTime:%s", dateY)
-    println("DateTime:%s", dateM)
-    println("DateTime:%s", dateD)
-    
-    table.insert(results_table, dateY)
-    table.insert(results_table, dateM)
-    table.insert(results_table, dateD)
-    table.insert(results_table, LotID)
-    
-    --判断机台所对应的pre
-    local field_names = {"code","rev","x","y","L0","L1","L2","L3","L4","L5","L6","L7","L8","wafer","fab","foundry","jtagID","sub","min0","maj","b1","timestamp","S1"}
-	local CRC1 = CRC_CRC_Calculation_NEW_8BIT(BuildFields(field_names),CRC1_MINLEN)
-	table.insert(results_table,CRC1)
-	table.insert(results_table,raw_values["CRC1"])
-	if CRC1 == raw_values["CRC1"] then  --判断值是否一样，一样为1不一样为0
-		table.insert(results_table,1)
-	else
-		table.insert(results_table,0)
-
-	end
-	
-	if TEST_MODE =="MT" then
-    	local field_names={ raw_values["B3"],raw_values["S3"]}
-    	local CRC3 = CRC_CRC_Calculation_NEW_4BIT(field_names, CRC3_MINLEN)
- 
-		table.insert(results_table,CRC3)
-		table.insert(results_table,raw_values["CRC3"])
-		if CRC3 == raw_values["CRC3"] then  --判断值是否一样，一样为1不一样为0
-			table.insert(results_table,1)
-		else
-			table.insert(results_table,0)
-		end
-		
-		local field_names={ "DAC_MODE","DAC_CAL","DAC_POINTA","DAC_POINTB"}
-		local CRCforDACBlock = CRC_CRC_Calculation_NEW_8BIT(BuildFields(field_names),dac_crc_MINLEN)
-		table.insert(results_table,CRCforDACBlock)
-		table.insert(results_table,raw_values["CRCforDACBlock"])
-		if CRCforDACBlock == raw_values["CRCforDACBlock"] then  --判断值是否一样，一样为1不一样为0
-			table.insert(results_table,1)
-		else
-			table.insert(results_table,0)
-		end
-			
-		local field_names={ "BANDGAP","TSENSOR_TEMP","TSENSOR_ADC1Q","TSENSOR_ADC3Q","TSENSOR_CODEA","TSENSOR_CODEB"}
-		local CRCforTempSensorBlock = CRC_CRC_Calculation_NEW_8BIT(BuildFields(field_names),CRC_TEMP_MINLEN)
-
-		table.insert(results_table,CRCforTempSensorBlock)
-		table.insert(results_table,raw_values["CRCforTempSensorBlock"])
-		if CRCforTempSensorBlock == raw_values["CRCforTempSensorBlock"] then  --判断值是否一样，一样为1不一样为0
-			table.insert(results_table,1)
-		else
-			table.insert(results_table,0)
-		end
-	end
-    return results_table
-end
-
-function BuildFields(field_names)
-	local result={}
-	for i = 1,#field_names do
-		local number = field_names[i]
-		local value = raw_values[number]
-		table.insert(result,value)
-	end
-	return result
-end
-
-function CRC_CRC_Calculation_NEW_4BIT(CRC_fields,CRC_MINLEN)
-
-	local  CRC_BIN_file, CRC_BIN_file_len=concat_bits(CRC_fields,CRC_MINLEN)
-	println("CRC_file:0b" .. string.format("%s", CRC_BIN_file)) 
-	LOG.INFO(string.format("len:%s",CRC_BIN_file_len))
-	
-	
-	
-	local CRC_4BIT=CRC_Calculation_4bit(CRC_BIN_file,0)
-	LOG.INFO(string.format("CRC_4BIT:%d",CRC_4BIT))
-	return CRC_4BIT
-end
-
-function CRC_CRC_Calculation_NEW_8BIT(CRC_fields,CRC_MINLEN)
-
-	local CRC_BIN_file, CRC_BIN_file_len=concat_bits(CRC_fields,CRC_MINLEN)
-	println("CRC_file:0b" .. string.format("%s", CRC_BIN_file)) 
-	LOG.INFO(string.format("len:%s",CRC_BIN_file_len))
-	
-	
-	
-	local CRC_8BIT=crc8_calc_bits(CRC_BIN_file)
-	LOG.INFO(string.format("CRC_8BIT:%d",CRC_8BIT))
-	return CRC_8BIT
-end
-
-
-function concat_bits(fields,min_len)
-    local bin_str = ""
-    -- 从后往前拼：timestamp(最高位) → code(最低位)
-    for i = #fields, 1, -1 do
-        local val = fields[i]
-        --local bits = get_bit_length(val)
-        bin_str = bin_str .. toBinary_crc(val, min_len[i])
-    end
-    return bin_str, #bin_str
-end
-
 
 function toBinary_crc(n, min_len)
-    min_len = min_len or 1
-    if n == 0 then 
-        return string.rep("0", min_len) 
-    end
-    local bin = ""
-    while n > 0 do
-        bin = (n % 2) .. bin
-        n = math.floor(n / 2)
-    end
-    -- 强制补齐前导0，保证位数不丢
-    if #bin < min_len then
-        bin = string.rep("0", min_len - #bin) .. bin
-    end
-    return bin
+	min_len = min_len or 1
+	if n == 0 then
+		return string.rep("0", min_len)
+	end
+	local bin = ""
+	while n > 0 do
+		bin = (n % 2) .. bin
+		n = math.floor(n / 2)
+	end
+	-- 强制补齐前导0，保证位数不丢
+	if #bin < min_len then
+		bin = string.rep("0", min_len - #bin) .. bin
+	end
+	return bin
 end
 
-function crc8_calc_bits(bits_str)
-    return crc8_update_bits(0x00, bits_str)
-end
-
-function crc8_update_bits(crc, bits_str)
-    if crc == nil then
-        crc = 0x00
-    end
-
-    if type(bits_str) ~= "string" then
-        error("bits_str must be a binary string")
-    end
-
-    local poly = 0x9B
-    local mask = 0xFF
-
-    -- remove spaces / underscores for readability
-    local clean = bits_str:gsub("[%s_]+", "")
-
-    -- validate input
-    for i = 1, #clean do
-        local c = clean:sub(i, i)
-        if c ~= "0" and c ~= "1" then
-            error("bits_str must contain only '0' or '1'")
-        end
-    end
-
-    -- LSB first:
-    -- if input string is written in normal order (MSB -> LSB),
-    -- then processing from string end to start gives LSB-first behavior.
-    for i = #clean, 1, -1 do
-        local bit = tonumber(clean:sub(i, i))
-        local fb = bit ~ ((crc >> 7) & 0x1)
-        crc = (crc << 1) & mask
-        if fb ~= 0 then
-            crc = crc ~ poly
-        end
-    end
-
-    return crc
-end
-
-function CRC_Calculation_4bit(bits_str,direction)
-    -- 将B和S拼接成8bit数据V
-    -- B为高4位，S为低4位
-    --local V = (S & 0x0F) << 4 | (B & 0x0F)
-    local bits_str_len=#bits_str
-    local bits_str_value = tonumber(bits_str,2) or 0
-    LOG.INFO(string.format("S_valid:%f",bits_str_value))
-    -- 初始化CRC为0
-    local CRC = {
-        [0] = 0,  -- bit0 (LSB)
-        [1] = 0,  -- bit1
-        [2] = 0,  -- bit2
-        [3] = 0   -- bit3 (MSB)
-    }
-    
-    if direction == 1 then
-        -- 从高位开始处理：bit7到bit0
-        for bit = bits_str_len-1, 0, -1 do
-            -- 获取V的第bit位
-            local V_bit = (bits_str_value >> bit) & 0x01
-            
-            -- V[bit]与CRC[bit3]进行XOR运算
-            local X0 = V_bit ~ CRC[3]
-            
-            -- 计算新的CRC值
-            local newCRC = {}
-            newCRC[3] = X0 ~ CRC[2]  -- X[bit0]与CRC[bit2]进行XOR运算，得X[bit3]
-            newCRC[2] = CRC[1]       -- X[bit2] = CRC[bit1]
-            newCRC[1] = CRC[0]       -- X[bit1] = CRC[bit0]
-            newCRC[0] = X0           -- X[bit0] = 原来的X[bit0]
-            
-            -- 更新CRC
-            CRC = newCRC
-        end
-    else
-        -- 从低位开始处理：bit0到bit7
-        for bit = 0, bits_str_len-1 do
-            -- 获取V的第bit位
-            local V_bit = (bits_str_value >> bit) & 0x01
-            
-            -- V[bit]与CRC[bit3]进行XOR运算
-            local X0 = V_bit ~ CRC[3]
-            
-            -- 计算新的CRC值
-            local newCRC = {}
-            newCRC[3] = X0 ~ CRC[2]  -- X[bit0]与CRC[bit2]进行XOR运算，得X[bit3]
-            newCRC[2] = CRC[1]       -- X[bit2] = CRC[bit1]
-            newCRC[1] = CRC[0]       -- X[bit1] = CRC[bit0]
-            newCRC[0] = X0           -- X[bit0] = 原来的X[bit0]
-            
-            -- 更新CRC
-            CRC = newCRC
-        end
-    end
-    
-    -- 将4bit CRC数组转换为整数
-    local result = (CRC[3] << 3) | (CRC[2] << 2) | (CRC[1] << 1) | CRC[0]
-    return result
-end
-
-
+--[[
+Function: I2C_Communication_Test
+Desc: I2C communication read/write test. Write pattern data to register 0x00EF then readback to verify.
+Input: None
+Return:
+    ret        : 0 = test complete
+    json_data  : Json string of readback data
+--]]
 function I2C_Communication_Test()
 	LOG.DEBUG("<I2CCommunication_Test>")
 	local data_table = {}
@@ -943,3447 +365,2761 @@ function I2C_Communication_Test()
 	local test_data = {
 		0xAAAAAAAA,
 		0x55555555,
-		0xFFFFFFFF,
+		0x5A5A5A5A,
+		0xA5A5A5A5,
 		0x00000000
 	}
-	
-	for k, v in ipairs(test_data) do
-		IIC_W_PEQUIN(0x0FFC, v)
-		--TIME.DELAY(10)
-		local read_data = IIC_R_PEQUIN(0x0FFC, 4)
-		local hex_str = string.format("0x%08X",read_data)
-		println(hex_str)
-		table.insert(data_table,hex_str)
-		if v ~= read_data then
-			LOG.ERROR("IIC read NG")
-			ret = -1
+	local original_slave_addr = IIC_CONFIG.SLAVE_ADDR
+
+	for i = 1, #IIC_SLAVE_ADDR_TAB do
+		IIC_CONFIG.SLAVE_ADDR = IIC_SLAVE_ADDR_TAB[i]
+		I3C_CONFIG.SLAVE_ADDR = IIC_SLAVE_ADDR_TAB[i]
+		IIC_CONFIG.init_default()
+		data_table = {}
+		LOG.DEBUG(string.format("0x%X", IIC_CONFIG.SLAVE_ADDR))
+		local pass = true
+		for k, v in ipairs(test_data) do
+			IIC_W_Tab2(0x00EF, v)
+			local read_data = IIC_R_Tab2(0xEF, 4)
+			local hex_str = string.format("0x%08X", read_data)
+			println(hex_str)
+			table.insert(data_table, hex_str)
+
+			if v ~= read_data then
+				LOG.ERROR("IIC read NG")
+				pass = false
+				break
+			end
+		end
+
+		if pass then
+			break
+		else
+			data_table = { 0X0, 0X0, 0X0, 0X0 }
 		end
 	end
-	LOG.INFO(string.format("0x%08X",IIC_CONFIG.SLAVE_ADDR))
-	--POWER_OFF() --20251223 add
+
+	IIC_CONFIG.SLAVE_ADDR = original_slave_addr
+	LOG.INFO(string.format("0x%08X", IIC_CONFIG.SLAVE_ADDR))
 	local json_data = cjson.encode(data_table)
 	LOG.INFO(json_data)
-	return ret,json_data
-	
-end
-
---20260122 add
---I2C_Single_RW(0x0FFC,0x55555522)
-function I2C_Single_RW(addr,data)
-	LOG.DEBUG("<I2C_Single_RW>")
-	local data_table = {}
-	local ret = 0
-	--POWER_OFF()
-	--TIME.DELAY(200)
-	--POWER_ON()
-
-	IIC_W_PEQUIN(addr, data)
-	--TIME.DELAY(10)
-	local read_data = IIC_R_PEQUIN(addr)
-	local hex_str = string.format("0x%08X",read_data)
-	println(hex_str)
-	table.insert(data_table,hex_str)
-	if data ~= read_data then
-		LOG.ERROR("IIC read NG")
-		ret = -1
-	end
-	--POWER_OFF() --20251223 add
-	local json_data = cjson.encode(data_table)
-	LOG.INFO(json_data)
-	return ret,json_data
-	
-end
---20260122 add
-
-function EFuse_full_bank_read()
-
-	i3c_write(0x0140, 0x10000000) -- Select eFuse debug field
-	i3c_write(0x0148, 0xffffffff) -- Enable all GPIO pins
-	i3c_write(0x0138, 0x00001909) -- Mux eFuse bus onto GPIOs
-	i3c_write(0x0000, 0x0010C000) -- Enable eFuse controller clock
-	i3c_write(0x015c, 0x00000011) -- Set read setup, hold and pulse width
-	i3c_write(0x0164, 0x00000519) -- Set VQPS setup & hold
-	
-	--TIME.DELAY(10)
-	local efuse_data = {}
-	local num_rows = 64 -- Adjust based on eFuse size
-	-- Read entire eFuse block
-	for row = 0, num_rows - 1 do
-		local read_cmd = 0x00004000 | row -- Read command with row address
-		i3c_write(0x0154, read_cmd)
-		--wait(10e-6) -- Wait for read to complete
-		TIME.DELAY(1)
-		-- Read eFuse byte from CSR
-		local efuse_byte = i3c_read(0x0158) & 0xFF
-		efuse_data[row+1] = efuse_byte
-		--println("efuse_data[%d]=%02X",row+1,efuse_data[row+1])
-	end
-	return efuse_data
-	
-end
-
-function reverse8(x)
-    local result = 0
-    for i = 0, 7 do
-        local bit = (x >> i) & 1
-        result = result | (bit << (7 - i))
-    end
-    return result
-end
-	
-
-function F_28M2_Interface_Check()
-	local tim1 = TIME.TICK()
-	LOG.DEBUG("<I2CCommunication_Test>")
-	local interface_table = {}
-	local i2c_table = {}
-	local i3c_table = {}
-	local i2c_data = "Pass"
-	local i3c_data = "NO Value"
-	local code_90 = "NO Value"
-	local code_270 = "NO Value"
-	local prbs = "NO Value"
-	local mipi_result = "NO Value"
-	local ret =1
-	local test_data = {
-		0xAAAAAAAA,
-		0x55555555
-	}
-	for k, v in ipairs(test_data) do
-		IIC_W_PEQUIN(0x0FFC, v)
-		TIME.DELAY(10)
-		local read_data = IIC_R_PEQUIN(0x0FFC, 4)
-		local hex_str = string.format("0x%08X",read_data)
-		println(hex_str)
-		table.insert(i2c_table,hex_str)
-		if v ~= read_data then
-			LOG.ERROR("IIC read NG")
-			i2c_data = "Fail"
-			ret = 0
-			
-		end
-	end
-	local i2c_val = cjson.encode(i2c_table)
-	LOG.INFO(i2c_val)
-
-	table.insert(interface_table, i2c_data)
-	table.insert(interface_table, i3c_data)
-	table.insert(interface_table, code_90)
-	table.insert(interface_table, code_270)
-	table.insert(interface_table, prbs)
-	table.insert(interface_table, mipi_result)
-	println("测试时间：%f S",(TIME.TICK() - tim1)/1000)
-	return ret, interface_table
-
+	return ret, json_data
 end
 
 
-function I2C_Address_efuse()
-	local tim1 = TIME.TICK()
-	local results_table={}
-	local result=0
-	local addr_table = {}
-	local ret = 1
-	local i2c_data = "NO Value"
-	local i2c_val = 0x00
-	local i2c_addressLSB = 0x1F0
-	local i2c_bitwidth = 2
-	local i2c_bitStart = 0
-	local i2c_bitStream1 = "0x"
-	local i2c_bitStream2 = "0x"
-	local i2c_Efuse_data = 0
-	println("=================I2C_Address_efuse =========================")
-	if Color == "Red" then
-		i2c_val = 0x01
-		IIC_CONFIG.SLAVE_ADDR = IIC_SLV_R
-	elseif Color == "Green" then
-		i2c_val = 0x02
-		IIC_CONFIG.SLAVE_ADDR = IIC_SLV_G
-	elseif Color == "Blue" then
-		i2c_val = 0x03
-		IIC_CONFIG.SLAVE_ADDR = IIC_SLV_B
-	end
-	efuse_write(i2c_val, i2c_addressLSB, i2c_bitwidth, i2c_bitStart)
-	IIC_CONFIG.init_default()
-	POWER_OFF()
-	TIME.DELAY(50)
-	POWER_ON()
-	TIME.DELAY(200)
-	i2c_Efuse_data = EFuse_bits_read(i2c_addressLSB, i2c_bitwidth, i2c_bitStart)
-	if i2c_Efuse_data == i2c_val then
-		LOG.INFO(string.format("efuse_DATA:0x%X",i2c_Efuse_data))
-	else
-		LOG.ERROR(string.format("FUSE VALUE ERROR:0x%X",i2c_Efuse_data))
-	end
-	table.insert(results_table,i2c_Efuse_data)
-	local json_data = cjson.encode(results_table)
-	LOG.INFO(json_data)
-	println("测试时间：%f S",(TIME.TICK() - tim1)/1000)
-	return 0, json_data
-	
-end
-
-function DAC_Divider_efuse()
-	local results_table={}
-	local addr_table = {}
-	println("=================DAC_Divider_efuse =========================")
-
-		
-	local dac_data = "NO Value"
-	local dac_val = 0x00
-	local dac_addressLSB = 0x100
-	local dac_bitwidth = 1
-	local dac_bitStart = 0
-	local dac_bitStream1 = "0x"
-	local dac_bitStream2 = "0x"
-	
-
-	if Color == "Red" then
-		dac_val = 0x00
-	elseif Color == "Green" then
-		dac_val = 0x01
-	elseif Color == "Blue" then
-		dac_val = 0x01
-	end
-	efuse_write(dac_val, dac_addressLSB, dac_bitwidth, dac_bitStart)
-	
-	local DAC_Divider_efuse_data = EFuse_bits_read(dac_addressLSB, dac_bitwidth, dac_bitStart)
-
-	if DAC_Divider_efuse_data == dac_val then
-	
-		LOG.INFO(string.format("efuse_DATA:0x%X",DAC_Divider_efuse_data))
-		table.insert(results_table,DAC_Divider_efuse_data)
-	else
-		LOG.ERROR(string.format("FUSE VALUE ERROR:0x%X",DAC_Divider_efuse_data))
-		table.insert(results_table,DAC_Divider_efuse_data)
-	end
-	local json_data = cjson.encode(results_table)
-	LOG.INFO(json_data)
-	
-	println("测试时间：%f S",(TIME.TICK() - tim1)/1000)
-	--return ret, addr_table
-	return 0, json_data
-
-
-end
---efuse_write(1, 0xB0, 4, 0)
-function  efuse_write(val, addressLSB, bitwidth, bitStart)
-	local efuse_bit = 0
-	local addr_shift = 0
-	local Efuse_data = 0
-	local result=0
-	Efuse_data = EFuse_bits_read(addressLSB, bitwidth, bitStart)
-	--Efuse_data = 0
-	if Efuse_data == 0 then
-	
-		--set_voltage("VQPS", 1.8V)
-		VQPS(ON)
-		--wait(1e-3) -- Wait to settle
-		TIME.DELAY(300)
-		println("efuse_write(0x%X,0x%04X,%d,%d)",val, addressLSB, bitwidth, bitStart)
-		addressLSB = math.floor((addressLSB/8))
-		
-		println("efuse_write(0x%X,0x%04X,%d,%d)",val, addressLSB, bitwidth, bitStart)
-		-- Configure eFuse programming
-		i3c_write(0x0000, 0x0010C000) -- Enable eFuse controller clock
-		i3c_write(0x0160, 0x00001f4d) -- Program setup, hold and pulse width
-		i3c_write(0x0164, 0x00000519) -- VQPS setup & hold
-		TIME.DELAY(100)
-		for i=0, bitwidth-1 do
-			bit=(val>> i)&1
-			efuse_bit = bitStart + addr_shift
-			
-			if efuse_bit > 7 then
-				addressLSB = addressLSB + 1
-				efuse_bit = 0
-				bitStart = 0
-				addr_shift = 0
-			end
-			addr_shift = addr_shift + 1
-			
-			println("efuse_bit = 0b%s",toBinary(efuse_bit))
-			if bit == 1 then
-			
-				i3c_write(0x0154, 0x00008000|((efuse_bit << 6) |addressLSB))
-				TIME.DELAY(10)
-			end
-		end
-	
-		i3c_write(0x0000, 0x0010D000) -- Disable eFuse controller clock
-		TIME.DELAY(100)
-		--set_voltage("VQPS", 0V)
-		VQPS(OFF)
-		
-	else 
-		println("NO NEED TO WRITE EFUSE")
-		
-	end
-	--Efuse_data = EFuse_bits_read(addressLSB, bitwidth, bitStart)
-	--return val
-end
-
-function  efuse_write_burning(val, addressLSB, bitwidth, bitStart)
-	local efuse_bit = 0
-	local addr_shift = 0
-	local Efuse_data = 0
-	Efuse_data = EFuse_bits_read(addressLSB, bitwidth, bitStart)
-	--Efuse_data = 0
-	--if Efuse_data == 0 then
-	
-		--set_voltage("VQPS", 1.8V)
-		VQPS(ON)
-		--wait(1e-3) -- Wait to settle
-		TIME.DELAY(300)
-		println("efuse_write(0x%X,0x%04X,%d,%d)",val, addressLSB, bitwidth, bitStart)
-		addressLSB = math.floor(addressLSB/8)
-		
-		println("efuse_write(0x%X,0x%04X,%d,%d)",val, addressLSB, bitwidth, bitStart)
-		-- Configure eFuse programming
-		i3c_write(0x0000, 0x0010C000) -- Enable eFuse controller clock
-		i3c_write(0x0160, 0x00001f4d) -- Program setup, hold and pulse width
-		i3c_write(0x0164, 0x00000519) -- VQPS setup & hold
-		TIME.DELAY(100)
-		for i=0, bitwidth-1 do
-			bit=(val>> i)&1
-			efuse_bit = bitStart + addr_shift
-			
-			if efuse_bit > 7 then
-				addressLSB = addressLSB + 1
-				efuse_bit = 0
-				bitStart = 0
-				addr_shift = 0
-			end
-			addr_shift = addr_shift + 1
-			
-			println("efuse_bit = 0b%s",toBinary(efuse_bit))
-			if bit == 1 then
-			
-				i3c_write(0x0154, 0x00008000|((efuse_bit << 6) |addressLSB))
-				TIME.DELAY(10)
-			end
-		end
-	
-		i3c_write(0x0000, 0x0010D000) -- Disable eFuse controller clock
-		TIME.DELAY(100)
-		--set_voltage("VQPS", 0V)
-		VQPS(OFF)
-		
-	--else 
-		--println("NO NEED TO WRITE EFUSE")
-	--end
-	--Efuse_data = EFuse_bits_read(addressLSB, bitwidth, bitStart)
-
-end
-function  efuse_write_I2C_R_to_B(val, addressLSB, bitwidth, bitStart)
-	local efuse_bit = 0
-	local addr_shift = 0
-	local Efuse_data = 0
-	Efuse_data = EFuse_bits_read(addressLSB, bitwidth, bitStart)
-	Efuse_data = 0
-	if Efuse_data == 0 then
-	
-		--set_voltage("VQPS", 1.8V)
-		VQPS(ON)
-		--wait(1e-3) -- Wait to settle
-		TIME.DELAY(300)
-		println("efuse_write(0x%X,0x%04X,%d,%d)",val, addressLSB, bitwidth, bitStart)
-		addressLSB = math.floor(addressLSB/8)
-		
-		println("efuse_write(0x%X,0x%04X,%d,%d)",val, addressLSB, bitwidth, bitStart)
-		-- Configure eFuse programming
-		i3c_write(0x0000, 0x0010C000) -- Enable eFuse controller clock
-		i3c_write(0x0160, 0x00001f4d) -- Program setup, hold and pulse width
-		i3c_write(0x0164, 0x00000519) -- VQPS setup & hold
-		TIME.DELAY(100)
-		for i=0, bitwidth-1 do
-			bit=(val>> i)&1
-			efuse_bit = bitStart + addr_shift
-			
-			if efuse_bit > 7 then
-				addressLSB = addressLSB + 1
-				efuse_bit = 0
-				bitStart = 0
-				addr_shift = 0
-			end
-			addr_shift = addr_shift + 1
-			
-			println("efuse_bit = 0b%s",toBinary(efuse_bit))
-			if bit == 1 then
-			
-				i3c_write(0x0154, 0x00008000|((efuse_bit << 6) |addressLSB))
-				TIME.DELAY(10)
-			end
-		end
-	
-		i3c_write(0x0000, 0x0010D000) -- Disable eFuse controller clock
-		TIME.DELAY(100)
-		--set_voltage("VQPS", 0V)
-		VQPS(OFF)
-		
-	else 
-		println("NO NEED TO WRITE EFUSE")
-	end
-	--Efuse_data = EFuse_bits_read(addressLSB, bitwidth, bitStart)
-
-end
-function EFuse_bits_read(addressLSB, bitwidth, bitStart)
-	-- Configure eFuse reading
-	i3c_write(0x0140, 0x10000000) -- Select eFuse debug field
-	i3c_write(0x0148, 0xffffffff) -- Enable all GPIO pins
-	i3c_write(0x0138, 0x00001909) -- Mux eFuse bus onto GPIOs
-	i3c_write(0x0000, 0x0010C000) -- Enable eFuse controller clock
-	i3c_write(0x015c, 0x00000011) -- Set read setup, hold and pulse width
-	i3c_write(0x0164, 0x00000519) -- Set VQPS setup & hold
-	
-	TIME.DELAY(10)
-	local results_table={}
-	local efuse_data = {}
-	local rows_start = math.floor((addressLSB/8)) -- rows_start
-	local rows_end = math.ceil(((addressLSB+4)/8)) -- rows_end
-	-- Read entire eFuse block
-	local n = 0
-	for row = rows_start, rows_end do
-		local read_cmd = 0x00004000 | row -- Read command with row address
-		i3c_write(0x0154, read_cmd)
-		--wait(10e-6) -- Wait for read to complete
-		TIME.DELAY(10)
-		-- Read eFuse byte from CSR
-		local efuse_byte = i3c_read(0x0158) & 0xFF
-		efuse_data[n+1] = efuse_byte
-		--println("read efuse_data[%d]=0x%02X",n+1,efuse_data[n+1])
-		n = n+1
-	end
-	local efuse_data_hex = 0
-	--local efuse_data = {0x15}
-	local a = 0
-	for i = 1,#efuse_data do 
-		efuse_data_hex = efuse_data_hex | efuse_data[i] << a *8
-		a = a+1
-		--println("efuse_data_hex：0x%x",efuse_data_hex)
-	end
-	--println("readefuse_data_hex：0x%x",efuse_data_hex) 
-	local mask = 1
-	efuse_data_bin = extract_bits(efuse_data_hex, bitStart, bitwidth)
-	--println("read efuse_data_bin：0x%x",efuse_data_bin) 
-	--println("read efuse_data_bin：0b'%s",toBinary(efuse_data_bin)) 
-	return efuse_data_bin
-	
-end
-	
-
-function F_28M2_TrimAndCal()
-	local tim1 = TIME.TICK()
-	local ret = 1
-	local osc_code = "NO Value"
-	local bandGap_code = nil
-	local anode_code = "NO Value"
-	local quarter_code = nil
-	local three_quarter_code = nil
-	local c50_code = "50"
-	local adc_code0 = nil
-	local adc_code1 = nil
-	local best_cal_trim = nil
-	local pointA = nil
-	local pointB = nil
-	local trimAndCal_table = {}
-	--local table = {osc_code,bandGap_code, anode_code, quarter_code, three_quarter_code, c50_code, adc_code0, adc_code1, best_cal_trim, pointA, pointB}
-	println("=================test_bandgap_trim =========================")
-	trim_table = test_bandgap_trim()
-	bandGap_code = trim_table["best_trim"]
-	
-	println("=================test_temperature_sensor_adc =========================")
-    local resTsnsADC = test_temperature_sensor_adc()
-    LOG.INFO(string.format("TEMP sns ADC 1/4 CODE:0X%x",resTsnsADC["1qFS"]))
-    LOG.INFO(string.format("TEMP sns ADC 3/4 CODE:0X%x",resTsnsADC["3qFS"]))
-    quarter_code = resTsnsADC["1qFS"]
-    three_quarter_code = resTsnsADC["3qFS"]
-    c50_code = resTsnsADC["50C"]
-    println("=================test_temperature_sensor_thermometer =========================")
-    local resTsensor = test_temperature_sensor_thermometer()
-    LOG.INFO(string.format("TEMP SENSOR 0:0X%x",resTsensor["tsns0"]))
-    LOG.INFO(string.format("TEMP SENSOR 1:0X%x",resTsensor["tsns1"]))
-    adc_code0 = resTsensor["tsns0"]
-    adc_code1 = resTsensor["tsns1"]
-    AVEE1(ON)
-    TIME.DELAY(100)
-    println("=================dac_full_range_calibration =========================")
-    resDAC_RangeCal = dac_full_range_calibration()
-    println("DAC Full range cal result target_current: %.3f uA; best get: %.3f uA; code:0x%x",resDAC_RangeCal["target_current"],resDAC_RangeCal["measured_current"],resDAC_RangeCal["best_cal_trim"])
-    println("-------------------------------")
-    best_cal_trim = resDAC_RangeCal["best_cal_trim"]
-    leak_current = resDAC_RangeCal["leakage_current"]
-    
-	println("=================test_pixel_current_dac_trim =========================")
-    resDAC2point_nA= test_pixel_current_dac_trim(leak_current, best_cal_trim)
-    println("DAC 2point Cal: pointA: %.3f nA; pointB: %.3f nA; ",resDAC2point_nA["currentPointA_nA"],resDAC2point_nA["currentPointB_nA"])
-    pointA = resDAC2point_nA["currentPointA_nA"]
-    pointB = resDAC2point_nA["currentPointB_nA"]
-    
-    table.insert(trimAndCal_table, osc_code)
-    table.insert(trimAndCal_table, bandGap_code)
-    table.insert(trimAndCal_table, anode_code)
-    table.insert(trimAndCal_table, quarter_code)
-    table.insert(trimAndCal_table, three_quarter_code)
-    table.insert(trimAndCal_table, c50_code)
-    table.insert(trimAndCal_table, adc_code0)
-    table.insert(trimAndCal_table, adc_code1)
-   	table.insert(trimAndCal_table, best_cal_trim)
-    table.insert(trimAndCal_table, pointA)
-    table.insert(trimAndCal_table, pointB)
-    println("测试时间：%f S",(TIME.TICK() - tim1)/1000)
-	return ret, trimAndCal_table
- 
-
-end
-
-function apply_trim()
-    local results_table = {}
-	--println("apply_calibrated_bandgap_trim")
-	local BGtrim= raw_values["BandgapTrim"] or EFuse_bits_read(0x130, 4, 0)
-	LOG.INFO(string.format("BGTRIM:%d",BGtrim))
-	local BGTRIM_VALUE =  0x00+(BGtrim << 4)+0x01 -- BG_TRIM bits[7:4]
-	LOG.INFO(string.format("BGTRIM_VALUE:0x%X",BGTRIM_VALUE))
-	i3c_write(0x00CC, BGTRIM_VALUE)
-	TIME.DELAY(5)
-	local READ=IIC_R_PEQUIN(0x00CC)
-	--LOG.INFO(string.format("READ:0x%X",READ))
----------------------------------------------------
-	local dac_ctrl_val=0
-	local lo_c_mode=1
-	if Color == "Red" then
-		lo_c_mode=0
-	end
-	
-	local dac_cal =  raw_values["DACCAL"] or EFuse_bits_read(0x102,4,2)
-	LOG.INFO(string.format("dac_cal:0x%X",dac_cal))
-	local VOLTAGE,CURRENT=POWER.VOL_CUR(P_AVEE)
-	--TIME.DELAY(5)
-	local RANGE_GLBL,RANGE_DAC=AVEE_RANG_Setting(VOLTAGE)
-	dac_ctrl_val=dac_ctrl_val+(dac_cal << 16)
-	dac_ctrl_val=dac_ctrl_val+(lo_c_mode << 8)
-	dac_ctrl_val=dac_ctrl_val+(RANGE_GLBL<<4)+(RANGE_DAC << 6)
-	dac_ctrl_val=dac_ctrl_val+(1 << 1)	
-	dac_ctrl_val=dac_ctrl_val+(1 << 0)
-
-	LOG.INFO(string.format("dac_ctrl_val:0x%X",dac_ctrl_val))
-	IIC_W_PEQUIN(0xD8, dac_ctrl_val) --DAC_CTRL
-	DAC_CTRL_value=dac_ctrl_val
-	
-	table.insert(results_table,BGtrim)
-	table.insert(results_table,dac_cal)
-	table.insert(results_table,lo_c_mode)
-	
-    local json_data = cjson.encode(results_table)
-	LOG.INFO(json_data)
-    --LOG.INFO("Power-up time: " .. string.format("%.3f", (tim2 / 1000 - tim1 / 1000)) .. " seconds")
-	return 0, json_data
-	
-end
-
-
-function apply_dac_ctrl_trim()
-	local dac_ctrl=0
-	local lo_c_mode=1
-	if Color == "Red" then
-		lo_c_mode=0
-	end
-	
-	local DAC_EFUSE =  EFuse_bits_read(0x102,4,2)--MT复用EDID
-	local VOLTAGE,CURRENT=POWER.VOL_CUR(P_AVEE)
-	--TIME.DELAY(5)
-	local RANGE_GLBL,RANGE_DAC=AVEE_RANG_Setting(VOLTAGE)
-	dac_ctrl=dac_ctrl+(DAC_EFUSE << 16)--MT复用EDID
-	dac_ctrl=dac_ctrl+(lo_c_mode << 8)--MT复用EDID
-	dac_ctrl=dac_ctrl+(RANGE_GLBL<<4)+(RANGE_DAC << 6)
-	dac_ctrl=dac_ctrl+(1 << 1)	
-	dac_ctrl=dac_ctrl+(1 << 0)
-
-	LOG.INFO(string.format("result:0x%X",dac_ctrl))
-	IIC_W_PEQUIN(0xD8, dac_ctrl) --DAC_CTRL
-	DAC_CTRL_value=dac_ctrl
-end
-
---    Power.ValueSetting.SMU2 = 100 --nA or mV
- --   SMU2(ON,0,0x82)    --0:give volage ; 1:give current, range max up to 5
-function test_bandgap_trim()
-	local tim1 = TIME.TICK()
-	local results = {}
-	local results_table = {}
-	local code_volages = {}
-	PPMU.CAL_EN(1)    --5V off 
-
-	--#1:Set VDD10 form 1.0V to 1.1V
-	Power.ValueSetting.DVDD = 1100
-	DVDD(ON)--VDD10
-	Power.ValueSetting.SMU2 = 0
-	SMU2(ON,1,0x82)
-	--#2:Enable bandgap
-	i3c_write(0x00CC, 0x00000000)  -- BG disable = 1	
-	 --If not done already, select output on Temp Tpad: Write 0x00000060 to address 0x00F0 (TEMP_SAMP_CTRL)
-	i3c_write(0x00F0, 0x00000160) -- Output TEMP_TPAD
-	i3c_write(0x00EC, 0x00000002)
-	local target_voltage = 1.0 -- 1V bandgap target
-	local best_voltage = 0
-	local best_trim = 0
-	--#5:Trim loop
-	for trim_code = 0, 15 do
-	 -- Set bandgap trim in DAC_CTRL register (0x00D8)
-	-- 调整Trim位：向地址0x00CC写入数据 0x000000X0    a. 位[7:4] = BG微调（每步约6mV）
-		local dac_ctrl =  0x00000000 | (trim_code << 4) -- BG_TRIM bits[7:4]
-		i3c_write(0x00CC, dac_ctrl)
-		TIME.DELAY(50)
-		-- Measure voltage on TEMP_TPAD
-		 local measured_voltage, measured_current = POWER.VOL_CUR(P_SMU2) --SMU2: Temp_tpad  config mode?
-		 println("trim_code: 0x%X,  measured_voltage:%.4f",trim_code,measured_voltage)
-		 table.insert(results_table,measured_voltage)
-		 if math.abs(measured_voltage - target_voltage) < math.abs(best_voltage - target_voltage) then
-			best_voltage = measured_voltage
-			best_trim = trim_code
-			println("best_voltage:%.4f",best_voltage)
-		 end
-		 
-	end
-	
-	Bandgap_code=best_trim--全局
-	
-	local analog_ctrl =  0x00000000 | (Bandgap_code << 4) -- BG_TRIM bits[7:4]
-	i3c_write(0x00CC, analog_ctrl)
-
-	Power.ValueSetting.DVDD = 1000
-	DVDD(ON)--VDD10
-	SMU2(OFF, 0)
-   	PPMU.CAL_EN(0)    --5V on
-	if IS_DEBUG=="TRUE" then
-		best_trim = 10
-	end
-	table.insert(results_table,best_voltage)
-	table.insert(results_table,best_trim)
-	local json_data = cjson.encode(results_table)
-	LOG.INFO(json_data)
-	println("测试时间：%f S",(TIME.TICK() - tim1)/1000)
-	return 0,json_data
-end
-
-
-
-function apply_calibrated_bandgap_trim()
-	println("apply_calibrated_bandgap_trim")
-	local dac_ctrl =  0x00000000 | (Bandgap_code << 4) | (0X01) -- BG_TRIM bits[7:4]--
-	i3c_write(0x00CC, dac_ctrl)
-	println("Apply bandgap code:0x%08X",dac_ctrl)
-end
-
-function test_temperature_sensor_adc()
-    local results = {}
-    --i3c_write(0x00CC, 0x00000000) -- ANLG_CTRL - BG disable = 0
-    apply_calibrated_bandgap_trim_test_two(1)--初次写入
-    --#3:Optional: Enable GPIO readout
-    i3c_write(0x0138, 0x00000212) -- DBG_MUX_310 - temp ADC on GPIOs
-    i3c_write(0x0148, 0xFFFFFFFF) -- GPIO_OE - enable all GPIOs
-    --#4:Enable external input via TEMP_TPAD
-    i3c_write(0x00F0, 0x00000170) -- TEMP_SAMP_CTRL - ADC source and TPAD_EN
-    --#5:Reset and enable temperature sensor ADC
-    i3c_write(0x00EC, 0x00000001) -- TEMP_SENS_CTRL - Reset
-    i3c_write(0x00EC, 0x00000002) -- TEMP_SENS_CTRL - Enable
-    
-    i3c_write(0x00F0,0x00000140)--i3c_write(0x00F0,0x00000040)
-    TIME.DELAY(10)
-    i3c_write(0x00F0,0x00000142)--i3c_write(0x00F0,0x00000042)
-    local quarter_code = i3c_read(0x0104) & 0x3FF
-    LOG.INFO(string.format("IIC_read quarter_code:%x",quarter_code))
-    
-    --#5:Reset and enable temperature sensor ADC
-    i3c_write(0x00EC, 0x00000001) -- TEMP_SENS_CTRL - Reset
-    i3c_write(0x00EC, 0x00000002) -- TEMP_SENS_CTRL - Enable
-    --TIME.DELAY(10)
-    i3c_write(0x00F0,0x00000130)--i3c_write(0x00F0,0x00000030)
-    TIME.DELAY(10)
-    i3c_write(0x00F0,0x00000132)--i3c_write(0x00F0,0x00000032)
-    local three_quarter_code = i3c_read(0x0104) & 0x3FF
-    LOG.INFO(string.format("IIC_read three_quarter_code:%x",three_quarter_code))
-    if IS_DEBUG=="TRUE" then
-    	tempratue_0p25_code=233
-    	tempratue_0p75_code=711
-    end
- 	results={tempratue_0p25_code,tempratue_0p75_code}
- 	
-	local json_data = cjson.encode(results)
-	LOG.INFO(json_data)
-    println("test_temperature_sensor_thermometer的测试时间：%f S",(TIME.TICK() - tim1)/1000)
-    --datalog_results("TEMP_THERMOMETER", results)
-    return 0,json_data
-
- end
-
- function Temperature_Sensor_Thermometer()
-    local results_table = {}
-    local Temperature_read=0.0
-    local Temperature_table={}
-    --i3c_write(0x00CC, 0x00000000) -- ANLG_CTRL - BG disable = 0
-    --apply_calibrated_bandgap_trim()
-    --#2:Enable thermometers, ADCs and manual mode
-    i3c_write(0x00EC, 0x00000012) -- TEMP_SENS_CTRL - THERM_EN, ADC_EN, RESET_ADC
-    --#3:Enable TEMP_TPAD output and disable auto sampling
-    i3c_write(0x00F0, 0x00000010) -- TEMP_SAMP_CTRL
-    
-    local temp_sensors = {0,1} -- VTherm 0 and VTherm 1
-    for _, sensor in ipairs(temp_sensors) do
-        -- 1. do manual temp sensor sampling
-        local adc_source = sensor + 1 -- VTherm 0 = 001, VTherm 1 = 010
-        local samp_ctrl = 0x00000000 | (adc_source << 4)
-        i3c_write(0x00F0, samp_ctrl)
-        --TIME.DELAY(100)
-        i3c_write(0x00F0, samp_ctrl | (1 << 1))
-		LOG.INFO(string.format("samp_ctrl[%d]:0X%x",sensor,samp_ctrl))
-        TIME.DELAY(10)
-        -- 2. Read ADC code and measure voltage
-        local adc_code = i3c_read(0x0104) & 0x3FF-- TEMP_ADC_RAW_VAL[9:0]
-        --LOG.INFO(string.format("TEMP SENSOR CODE:0X%x",adc_code))
-        Temperature_read=convert_adc_to_temperature(adc_code, sensor)
-        --LOG.INFO(string.format("Temperature:%f",Temperature_read))
-        table.insert(results_table,1000)
-        table.insert(results_table,Temperature_read)
-        table.insert(results_table,adc_code)
-
-    end
-    local json_data = cjson.encode(results_table)
-	LOG.INFO(json_data)
-	return 0, json_data
-    
- end
- 
- function convert_adc_to_temperature(adc_code, sensorIdx) -- sensorIdx is either 0 or 1
-
-    local caled_temp_point = caled_temp_point--(EFuse_bits_read(0x134,12,4) & 0x0FFF)/10.0 --expect 50.0
-    local codeEfuse=0
-	if TEST_MODE=="MT" then
-	    if sensorIdx == 0 then
-	        codeEfuse = raw_values["TempSensorA"] or (EFuse_bits_read(0x154,10,4) & 0x03FF)
-	    else
-	        codeEfuse = raw_values["TempSensorB"] or (EFuse_bits_read(0x160,10,0) & 0x03FF)
-	    end
-	elseif TEST_MODE=="CP2" then 
-	    if sensorIdx == 0 then
-	        codeEfuse = thermal_sensor0_code
-	    else
-	        codeEfuse = thermal_sensor1_code
-	    end
-	end
-
-    local sensor_temp = caled_temp_point + (adc_code - codeEfuse)/(-1.6)
-    return sensor_temp
-
-end
- 
- function dac_full_range_calibration()
-    local results = {}
-   	--PPMU.CAL_EN(1)    --5V off
-
-    --i3c_write(0x00D8, 0x0) --for init
-    Power.ValueSetting.SMU1 = 0 --nA or mV
---    SMU2(0,0,0x83)
-    SMU1(ON,0,0x82)    --0:give volage ; 1:give current, range max up to 5
-    
-    TIME.DELAY(50)--
-    local refVolt, leakageCurrent = POWER.VOL_CUR(P_SMU1)
-    --println("measured_voltage:%f",measured_voltage)
-    println("leakageCurrent:%f",leakageCurrent)
-    
-    --apply_calibrated_bandgap_trim_test_two(1)--apply_calibrated_bandgap_trim_test_two已经执行
-    local difference=10 --tolerance
-    --#2:Setup DAC  
-    local dac_ctrl = 0
-    --local glbl, dac = get_avee_range_settings(voltage_AVEEE1)--GLBL=BIT[5:4]  DAC=BIT[7:6]
-    local glbl=1
-    local dac =0
-    dac_ctrl = dac_ctrl | (5 << 16) -- DAC_CAL = 5 (recommended start)
-    local LO_C_MODE = (Color == "Red") and 0 or 1
-    println("LO_C_MODE:%d",LO_C_MODE)
-    
-    dac_ctrl = dac_ctrl | (LO_C_MODE << 8) -- LO_C_MODE = 0 for red, 1 for G/B
-    dac_ctrl = dac_ctrl | (glbl << 6) | (dac << 4) -- AVEE range settings
-    dac_ctrl = dac_ctrl | (1 << 1) -- UPDATE_IMM
-    dac_ctrl = dac_ctrl | (1 << 0) -- EN
-    dac_ctrl = dac_ctrl | (1 << 3) 
-    --dac_ctrl = dac_ctrl | (1 << 2) 
-    --dac_ctrl = dac_ctrl & ~ (1 << 3) 
-    i3c_write(0x00D8, dac_ctrl) -- DAC_CTRL
-
-    println("dac_ctrl:0x%08X",dac_ctrl)
-    --#3:Set DAC Word to nominal drive current
-    local nominal_dac_word = 0x1ff
-    i3c_write(0x00DC, nominal_dac_word) -- DAC_WORD
-    println("dac_word:0x%08X",nominal_dac_word)
-    local target_current = (LO_C_MODE == 0) and 20 or 8     --uA
-    
-    local best_current = 0
-    --#4:Calibration trim loop
-    for cal_trim = 0, 15 do
-        dac_ctrl = (dac_ctrl & ~(0xF << 16)) | (cal_trim << 16)
-        i3c_write(0x00D8, dac_ctrl)
-        TIME.DELAY(50) -- Wait to settle  500ms???????
-        --#5:Measure current
-        local measured_voltage, measured_current = POWER.VOL_CUR(P_SMU1)
-        println("measured_current:%f",measured_current)
-    --    println("[%d],measured_voltage: %fmV; measured_current:%.4fnA",cal_trim,measured_voltage,measured_current)
-        dac_current=(-measured_current+leakageCurrent)/1000
-        println("[0x%x] [%02d] DAC current out:%.4fuA",dac_ctrl,cal_trim,dac_current)
-        println("dac_current - target_current:%f",math.abs(dac_current - target_current))
-        if math.abs(dac_current - target_current) <= math.abs(target_current *(difference/100)) and math.abs(dac_current)>=20 then
-            best_current = dac_current
-            DAC_cal_trim_step = cal_trim
-            DAC_calibration_code=dac_ctrl
-			println("taregt: %.3f uA; best get: %.3f uA; code:0x%x",target_current,best_current,DAC_cal_trim_step)
-        	break
-        end
-   
-    end
-
-    if IS_DEBUG=="TRUE" then
-		DAC_cal_trim_step = 4
-	end
-	dac_ctrl = (dac_ctrl & ~(0xF << 16)) | (DAC_cal_trim_step << 16)
-	i3c_write(0x00D8, dac_ctrl)			--设置目标值
-    --SMU1(OFF, 0)
-	table.insert(results,DAC_cal_trim_step)
-	table.insert(results,best_current)
-	
-	local json_data = cjson.encode(results)
-	LOG.INFO(json_data)
-	return 0,json_data
-	
-end
-
-function test_pixel_current_dac_trim(leakageCurrent,best_cal_trim)
-    local results = {}
-    --local calibrated_dac_cal = dac_full_range_calibration()
-    -- -- 0 for Red, 1 for Blue & Green
-    local lo_c_mode = (Color == "Red") and 0 or 1
-
-    
-    --Obtain voltage
---    local voltage_AVEEE1,current_AVEEE1=POWER.VOL_CUR(P_AVEE)
---    local RANGE_GLBL, RANGE_DAC=get_avee_range_settings(voltage_AVEEE1)
-
-    local dac_ctrl = 0
-    dac_ctrl = dac_ctrl + (best_cal_trim<<16)                -- Use calibrated DAC_CAL
-    dac_ctrl = dac_ctrl + (lo_c_mode << 8)                        -- LO_C_MODE based on wafer color
-    dac_ctrl = dac_ctrl + (0 << 4)+ (0 << 6)    -- AVEE range settings
-    dac_ctrl = dac_ctrl + (1 << 1)                                -- UPDATE_IMM
-    dac_ctrl = dac_ctrl + (1 << 0)                                --ENABLE DAC
-    dac_ctrl = dac_ctrl + (1 << 3)
-    i3c_write(0x00D8, dac_ctrl)
-    println("dac_ctrl:0x%08X",dac_ctrl)
-
-    println(leakageCurrent)
-    println(best_cal_trim)
-    
-    local CodeA = 43
-    i3c_write(0x00DC, CodeA)
-    TIME.DELAY(300)
-    local voltage_pointA,measA = POWER.VOL_CUR(P_SMU2)  -- Measure the ANOD_TPAD current
-    local current_pointA = leakageCurrent-measA
-    println("CodeA[%d] measA:%.4fnA   pointA:%.4fnA",CodeA,measA, current_pointA)
-    results["currentPointA_nA"] = current_pointA
-    
-    local CodeB = 341
-    i3c_write(0x00DC, CodeB)
-    TIME.DELAY(300)
-    local voltage_pointB,measB = POWER.VOL_CUR(P_SMU2)-- Measure the ANOD_TPAD current
-    local current_pointB = leakageCurrent-measB
-    println("CodeB[%d] measB:%.4fnA  pointB: %.4fnA",CodeB,measB,current_pointB)
-	local pointA_Code = math.floor(current_pointA/5)
-	local pointB_Code = math.floor(current_pointB/5)
-	println("pointA_Code:%d ",pointA_Code)
-	println("pointB_Code:%d ",pointB_Code)
-	
-	PiontA_efuse_write(pointA_Code)
-	PiontB_efuse_write(pointB_Code)
-	
-    results["currentPointB_nA"] = current_pointB
-
-    return results
-end
-
-
-
-function  F_28M2_MIPI_CReg_Write(target_current)--uA
-    local results = {}
-	local target_current_nA  = tonumber(target_current)*1000
-    --local calibrated_dac_cal = dac_full_range_calibration()
-    -- -- 0 for Red, 1 for Blue & Green
-    local efuse_dac_cal_code =  EFuse_bits_read(0x102,4,2)
-	--local efuse_dac_lo_power_mode_code =  EFuse_bits_read()
-    best_cal_trim = efuse_dac_cal_code
-    println("best_cal_trim:0x%08X",best_cal_trim)
-    local lo_c_mode = (Color == "Red") and 0 or 1
-
-	local glbl=0
-	local dac =0
-    local dac_ctrl = 0
-    dac_ctrl = dac_ctrl + (best_cal_trim<<16)                -- Use calibrated DAC_CAL
-    dac_ctrl = dac_ctrl + (lo_c_mode << 8)                        -- LO_C_MODE based on wafer color
-    dac_ctrl = dac_ctrl + (0 << 4)+ (0 << 6)    -- AVEE range settings
-    dac_ctrl = dac_ctrl + (1 << 1)                                -- UPDATE_IMM
-    dac_ctrl = dac_ctrl + (1 << 0)                                --ENABLE DAC
-    dac_ctrl = dac_ctrl + (1 << 3)
-    i3c_write(0x00D8, dac_ctrl)
-    println("dac_ctrl:0x%08X",dac_ctrl)
-    
-    --Power.ValueSetting.SMU2 = -001 --nA or mV
-    --SMU2(ON,0,0x82)
-    --TIME.DELAY(600)
-    
-	local dacword_pointA =  EFuse_bits_read(0x110,12,0)
-	local dacword_pointB =  EFuse_bits_read(0x11C,12,4)
-	println("dacword_pointA: 0x%X",dacword_pointA)
-	println("dacword_pointB: 0x%X",dacword_pointB)
-	
-	local PointA_current = dacword_pointA * 5
-	local PointB_current = dacword_pointB * 5
-	println("PointA_current: %d",PointA_current)
-	println("PointB_current: %d",PointB_current)
-	local DAC_Word_B=341
-	local DAC_Word_A=43
-	local Gain =  math.ceil((PointB_current - PointA_current) / (DAC_Word_B - DAC_Word_A))
-	println("Gain:%d",Gain)
-	local Offset = PointA_current - Gain * DAC_Word_A
-	println("Offset:%d",Offset)
-	local DAC_Code = math.floor((target_current_nA - Offset) / Gain)
-	println("DAC_Code:%d",DAC_Code)
-	
-	if DAC_Code > 511 then
-		DAC_Code = 511
-	end
-	i3c_write(0x00DC, DAC_Code)
-	TIME.DELAY(100)
-	IIC_W_PEQUIN(0x0, 0x109000) --CLK_CTRL
-	TIME.DELAY(100)
-    results = {DAC_Code}
-
-    return 1, results
-end
-
-function BandGap_trim_efuse_write(value)
-	local val = value
-	local addressLSB = 0x130
-	local bitwidth = 4
-	local bitStart = 0
-	efuse_write(val, addressLSB, bitwidth, bitStart)
-	return 0
-end
-
-
-function Temperature_sensor_adc_quarte_efuse_write(value)
-	local val = value
-	local addressLSB = 0x140
-	local bitwidth = 10
-	local bitStart = 0
-	efuse_write(val, addressLSB, bitwidth, bitStart)
-	return 0
-end
-function Temperature_sensor_adc_three_quarte_efuse_write(value)
-	local val = value
-	local addressLSB = 0x14A
-	local bitwidth = 10
-	local bitStart = 2
-	efuse_write(val, addressLSB, bitwidth, bitStart)
-	return 0
-end
-function Temperature_sensor_adc_50C_efuse_write(value)
-	local val = value
-	local addressLSB = 0x134
-	local bitwidth = 12
-	local bitStart = 4
-	efuse_write(val, addressLSB, bitwidth, bitStart)
-	return 0
-end
-
-function vtherm0_adc_efuse_write(value)
-	local val = value
-	local addressLSB = 0x154
-	local bitwidth = 10
-	local bitStart = 4
-	efuse_write(val, addressLSB, bitwidth, bitStart)
-	return 0
-end
-function vtherm1_adc_efuse_write(value)
-	local val = value
-	local addressLSB = 0x160
-	local bitwidth = 10
-	local bitStart = 0
-	efuse_write(val, addressLSB, bitwidth, bitStart)
-	return 0
-end
-function DAC_full_cal_efuse_write(value)
-	local val = value
-	local addressLSB = 0x102
-	local bitwidth = 4
-	local bitStart = 2
-	efuse_write(val, addressLSB, bitwidth, bitStart)
-	return 0
-end
-function PiontA_efuse_write(value)
-	local val = value
-	local addressLSB = 0x110
-	local bitwidth = 12
-	local bitStart = 0
-	efuse_write(val, addressLSB, bitwidth, bitStart)
-	return 0
-end
-function PiontB_efuse_write(value)
-	local val = value
-	local addressLSB = 0x11C
-	local bitwidth = 12
-	local bitStart = 4
-	efuse_write(val, addressLSB, bitwidth, bitStart)
-	return 0
-end
-
-function F_28M2_eFuse_PostTest()
-
-	local ret = 1
-	local post_value = "Pass"
-	local post_table = {}
-	
-	local val = 0x8
-	local addressLSB = 0xBC
-	local bitwidth = 4
-	local bitStart = 4
-	efuse_write(val, addressLSB, bitwidth, bitStart)
-	
-	post_data = EFuse_bits_read(addressLSB, bitwidth, bitStart)
-	if post_data ~= 0x8 then
-		post_value = "Fail"
-		ret = 0
-	end
-	post_table = {post_data}
-		
-	return ret, post_table
-
-end
-
-
-
-
-
---Temperature_Read(1)
-function Temperature_Read(sensor_id)
-
-	i3c_write(0x00CC, 0x00000000)  -- ANLG_CTRL - BG disable = 0
-	i3c_write(0x00EC, 0x00000012)  -- DBG_MUX_310 - temp ADC on GPIOs
-    -- Enable external input via TEMP_TPAD
-    i3c_write(0x00F0, 0x00000110)  -- - TEMP_SAMP_CTRL - ADC source and TPAD_EN
-
-    -- Test all temperature sensors
-    local adc_source = sensor_id + 1  -- 0→1（001），1→2（010）
-    -- Set ADC source to output VTherm on TEMP_TPAD & ADCs
-    local samp_ctrl = 0x00000110 | (adc_source << 4) 
-    i3c_write(0x00F0, samp_ctrl)
-    TIME.DELAY(1) 
-
-    -- Start manual sample
-    local temp_reg = i3c_read(0x00F0, 1)
-    i3c_write(0x00F0, temp_reg | (1 << 1))
-    TIME.DELAY(100)
-
-    -- Read ADC code and measure voltage
-    local adc_code = i3c_read(0x0104, 1) & 0x3FF  -- TEMP_ADC_RAW_VAL[9:0]
-    --local voltage = POWER.VOL_CUR(1)  -- 
-
-    local temperature = convert_adc_to_temperature(adc_code)
-    return temperature
-end
-
-
-function LB_DIB_Impedance_calibration()
-	local result_table={}
-	local SMU1DATA_V = 0.0
-	local SMU1DATA_C = 0.0
-	
-	local SMU2DATA_V = 0.0
-	local SMU2DATA_C = 0.0
-	GPIO3_A_SET(0)
-	SMU1_OUT_V(-200)
-	TIME.DELAY(350)
-	SMU2_OUT_V(-200)
-	TIME.DELAY(350)
-	SMU1DATA_V,SMU1DATA_C=POWER.VOL_CUR(P_SMU1)
-	SMU2DATA_V,SMU2DATA_C=POWER.VOL_CUR(P_SMU2)
-	LOG.INFO(string.format("1V:%f",SMU1DATA_V))
-	LOG.INFO(string.format("1C:%f",SMU1DATA_C))
-	local SMU1_ohm = SMU1DATA_V/(SMU1DATA_C/1e9)
-	local SMU2_ohm = SMU2DATA_V/(SMU2DATA_C/1e9)
-	GPIO3_A_SET(0)
-	SMU1_OUT_V(0)
-	SMU2_OUT_V(0)
-	table.insert(result_table,SMU1_ohm)
-	table.insert(result_table,SMU2_ohm)
-	return result_table
-end
---Mipi_Term90_270_Test(90,0)
-function Mipi_Term90_270_Test(ohm, channel)
-	local tim1 = TIME.TICK()
-	local result_table={}
-	--Post_Initial_ON()
-	PIC.SW(Folder..'/'..imShow[2])
-	TIME.DELAY(10)
-	local clk90 = raw_values["clk_term90"] or 0
-	local clk270 = raw_values["clk_term270"] or 0
-	local data90 = raw_values["data_term90"] or 0
-	local data270 = raw_values["data_term270"] or 0
-	
-
-	if clk90 == 0 or clk270 == 0 or data90 == 0 or data270 == 0 then
-	    Efuse_clk90_value = EFuse_bits_read(0x190,3,0)
-	    Efuse_clk270_value = EFuse_bits_read(0x193,3,3)
-	    Efuse_data90_value = EFuse_bits_read(0x196,3,6)
-	    Efuse_data270_value = EFuse_bits_read(0x199,3,1)
-	else
-	    Efuse_clk90_value = clk90
-	    Efuse_clk270_value = clk270
-	    Efuse_data90_value = data90
-	    Efuse_data270_value = data270
-	end
-	
-	if Efuse_clk90_value==0 or Efuse_clk270_value==0 or Efuse_data90_value==0 or Efuse_data270_value==0  then
-		--TIME.DELAY(200)
-		--POWER_ON_IDLE_POWER()
-		DMIPI.LP()
-		TIME.DELAY(10)
-		local ret=0
-		local ret1=0
-		
-		local read_data = 0
-		local LB_DB = LB_DIB_Impedance_calibration()
-		local lb_db = 0.0
-		local test_channel = 0
-		local term_clk = 0	
-		local term_data = 0
-		local difference_value=10----Resistance deviation range unit: %
-		
-		--LOG.INFO(#LB_DB)
-		local SMU1_lb_db = LB_DB[1]
-		local SMU2_lb_db = LB_DB[2]
-		LOG.INFO(string.format("1ohm:%f",SMU1_lb_db))
-		LOG.INFO(string.format("2ohm:%f",SMU2_lb_db))
-		--Force 5V at both SMU
-		local read_data = i3c_read(0x000c)
-		TIME.DELAY(1)
-		i3c_write(0x000c,read_data|0x40400)---Write 1 to the 10th bit and 18th bit of the 0xc register
-	
-		GPIO3_A_SET(1)--暂时使用恒压
-		SMU1_OUT_V(-200)
-		SMU2_OUT_V(-200)
-		
-		--SMU1_OUT_C(200*1000)
-		--SMU2_OUT_C(200*1000)
-		TIME.DELAY(50)
-		if ohm == 90 then
-			read_data = i3c_read(0x000c)
-			TIME.DELAY(10)
-			i3c_write(0x000c,read_data|0x180)---clk 90ohm set
-			TIME.DELAY(10)
-			ret,term_clk = resistance_value_code_clk90(ohm,0,SMU1_lb_db,difference_value)
-			
-			read_data = i3c_read(0x000c)
-			TIME.DELAY(10)
-			i3c_write(0x000c,read_data|0x18000)---data 90ohm set
-			ret1,term_data = resistance_value_code_data90(ohm,1,SMU2_lb_db,difference_value)
-		elseif ohm == 270 then
-			read_data = i3c_read(0x000c)
-			read_data= read_data & ~(0x3 << 7)
-			read_data= read_data & ~(0x3 << 15)
-			i3c_write(0x000c,read_data)
-			ret,term_clk = resistance_value_code_clk270(ohm,0,SMU1_lb_db,difference_value)---clk 270ohm set
-			--LOG.INFO(string.format("term_clk:0x%X",term_clk))
-			read_data = i3c_read(0x000c)
-			read_data= read_data & ~(0x3 << 7)
-			read_data= read_data & ~(0x3 << 15)
-			i3c_write(0x000c,read_data)
-			ret1,term_data = resistance_value_code_data270(ohm,1,SMU2_lb_db,difference_value)---data 270ohm set
-		end
-		LOG.INFO(#term_clk)
-		LOG.INFO(#term_data)
-		--Read the code that tests the measured impedance closest to 90 ohms
-		--local term = resistance_value_code(ohm,test_channel,lb_db)
-		if ret~=0 then
-			LOG.ERROR("No suitable clk_trem_code found")
-			
-		else
-			LOG.INFO(string.format("%fohm,clk_trem_code:0x%X",ohm,term_clk[1]))
-		end
-		
-		if ret1~=0 then
-			LOG.ERROR("No suitable data_trem_code found")
-			
-		else
-			LOG.INFO(string.format("%fohm,data_trem_code:0x%X",ohm,term_data[1]))
-		end
-		SMU1_OUT_V(0)
-		SMU2_OUT_V(0)
-		GPIO3_A_SET(0)
-		if ohm==90 and ret==0 and ret1==0 then --测试完后写入值，90
-			 local original = IIC_R_PEQUIN(0x000c)
-			 LOG.INFO(string.format("0x%X",original))
-			 original= original & ~(0x1F << 12)
-			 original= original & ~(0x1F << 4)
-			 original= original & ~(0x01 << 10)
-			 original= original & ~(0x01 << 18)
-			 original= original | (0x3<< 7)
-			 original= original | (0x3<< 15)
-			 LOG.INFO(string.format("result:0x%X",original))
-			 original= original | ((term_clk[1]&0x7)<< 4)
-			 original= original | ((term_data[1]&0x7)<< 12)
-			 mipi_term_90=original
-			 MIPI_TERM=original
-			 LOG.INFO(string.format("mipi_term_90:0x%X",original))
-			 --VIDEO Using
-			 IIC_W_PEQUIN(0x000c,mipi_term_90)
-		 	 Efuse_90_clk=term_clk[1]&0x7
-		 	 Efuse_90_data=term_data[1]&0x7
-		elseif ohm==270 and ret==0 and ret1==0 then
-			local original = IIC_R_PEQUIN(0x000c)
-			LOG.INFO(string.format("0x%X",original))
-			original= original & ~(0x1F << 12)
-			original= original & ~(0x1F << 4)
-			original= original & ~(0x01 << 10)
-			original= original & ~(0x01 << 18)
-			original= original & ~(0x3 <<7)
-			original= original & ~(0x3 <<15)
-			LOG.INFO(string.format("result:0x%X",original))
-			original= original | ((term_clk[1]&0x7)<< 4)
-			original= original | ((term_data[1]&0x7)<< 12)
-			mipi_term_270=original
-			MIPI_TERM=original
-			--IIC_W_PEQUIN(0x000c,mipi_term_270)--默认写入90，暂时屏蔽
-			LOG.INFO(string.format("mipi_term_270:0x%X",original))
-			Efuse_270_clk=term_clk[1]&0x7
-			Efuse_270_data=term_data[1]&0x7
-
-		end
-		
-		DMIPI.VID()
-		DMIPI.HS()
-		if ret~=0 or ret1~=0 then
-			IIC_W_PEQUIN(0x000c,0X1)
-		end
-	
-		table.move(term_clk,1,#term_clk,#result_table+1,result_table)
-		table.move(term_data,1,#term_data,#result_table+1,result_table)
-		--table.insert(result_table,Clk_term270)
-		LOG.INFO(#result_table)
-	
-	else--如果已经校准直接写入
-		if ohm==90 then
-			 local original = IIC_R_PEQUIN(0x000c)
-			 LOG.INFO(string.format("0x%X",original))
-			 original= original & ~(0x1F << 12)
-			 original= original & ~(0x1F << 4)
-			 original= original & ~(0x01 << 10)
-			 original= original & ~(0x01 << 18)
-			 original= original | (0x3<< 7)
-			 original= original | (0x3<< 15)
-			 LOG.INFO(string.format("result:0x%X",original))
-			 original= original | ((Efuse_clk90_value&0x7)<< 4)
-			 original= original | ((Efuse_data90_value&0x7)<< 12)
-			 mipi_term_90=original
-			 MIPI_TERM=original
-			 IIC_W_PEQUIN(0x000c,mipi_term_90)
-			 LOG.INFO(string.format("mipi_term_90:0x%X",original))
-			 
-			 table.insert(result_table,Efuse_clk90_value)
-			 for i=1,24 do
-			 	table.insert(result_table,0)
-			 end
-	    	table.insert(result_table,Efuse_data90_value)
-	    	 for i=1,24 do
-			 	table.insert(result_table,0)
-			 end
-		
-		elseif ohm==270 then
-			 local original = IIC_R_PEQUIN(0x000c)
-			 LOG.INFO(string.format("0x%X",original))
-			 original= original & ~(0x1F << 12)
-			 original= original & ~(0x1F << 4)
-			 original= original & ~(0x01 << 10)
-			 original= original & ~(0x01 << 18)
-			 original= original & ~(0x3 <<7)
-			 original= original & ~(0x3 <<15)
-			 LOG.INFO(string.format("result:0x%X",original))
-			 original= original | ((Efuse_clk270_value&0x7)<< 4)
-			 original= original | ((Efuse_data270_value&0x7)<< 12)
-			 mipi_term_270=original
-			 MIPI_TERM=original
-			 --IIC_W_PEQUIN(0x000c,mipi_term_270)--默认写入90，暂时屏蔽
-			 LOG.INFO(string.format("mipi_term_270:0x%X",original))
-			 
-			table.insert(result_table,Efuse_clk270_value)
-			 for i=1,24 do
-			 	table.insert(result_table,0)
-			 end
-	    	table.insert(result_table,Efuse_data270_value)
-	    	 for i=1,24 do
-			 	table.insert(result_table,0)
-			 end
-		end
-
-	end
-	local json_data = cjson.encode(result_table)
-	local tim2 = TIME.TICK()
-    LOG.INFO("Power-up time: " .. string.format("%.3f", (tim2 / 1000 - tim1 / 1000)) .. " seconds")
-	LOG.INFO(#json_data)
-	LOG.INFO(json_data)
-	return 0, json_data
-end
-
-
-function resistance_value_code_clk90(Target_value,power_channel,lb_db,difference_value)
-	local Clk_DATA={
-		SMU_V=0.0;
-		SMU_C=0.0;	
-	}
-	local ret = 0
-	local DATA_TABLE = {}
-	local results_table={}
-	local bit_mask = 0x70        -- 目标位掩码（bit4~bit6=111，用于清空位域）
-	local bit_shift = 4          -- 目标位起始偏移（bit4，左移 4 位对齐）
-	local cycle_states = 8       -- 循环状态总数（3 位 bit 共 8 种）
-	local read_data = 0 
-	local term_code_table={}
-	local test_ohm_table={}
-	--efuse_write(val, 0x000c, bitwidth, bitStart)
-	--for term_code=0,7,1 do
-		--Start testing by gradually writing to the 0x000 register starting from 0x00
-		local original = i3c_read(0x000c)
-			  original= original & ~(0x1F << 12)
-		for cycle_idx = 0, cycle_states - 1 do
-
-    		local cleared = original & (~bit_mask)         
-    		local term_code = cleared | (cycle_idx << bit_shift)  
-
-    		LOG.INFO(string.format("loop %d ：0x%X",cycle_idx, term_code))
-			--end
-			--read_data = i3c_read(0x000c)
-			i3c_write(0x000c,term_code)
-			TIME.DELAY(10)
-			local readdd_data = i3c_read(0x000c)
-			LOG.INFO(string.format("read_data[%d]:0x%X",cycle_idx,readdd_data))
-			TIME.DELAY(300)
-			--Obtain the actual voltage and current of the SMU channel
-			Clk_DATA.SMU_V,Clk_DATA.SMU_C=POWER.VOL_CUR(power_channel)--The units are V, nA
-			
-			--Calculate the resistance value
-			local resistance_value = Clk_DATA.SMU_V/(Clk_DATA.SMU_C/1e9)
-			 resistance_value = resistance_value-lb_db
-			 table.insert(DATA_TABLE,Clk_DATA.SMU_V)
-			 
-			 table.insert(DATA_TABLE,Clk_DATA.SMU_C/1e9)
-			 table.insert(DATA_TABLE,resistance_value)
-			--Check if the calculated resistance value is within the range
-			local Impedance_result = check_best_resistance_value(Target_value,resistance_value,difference_value)
-			if Impedance_result then
-				table.insert(term_code_table,cycle_idx)
-				table.insert(test_ohm_table,resistance_value)
-				LOG.INFO(string.format("The closest impedance:0x%02x",term_code))
-			end
-			if #term_code_table == 0 and cycle_idx == 7 then
-				ret=1
-				
-			end
-		end
-		local Serial_number = closest(test_ohm_table,Target_value)
-		LOG.INFO(Serial_number)
-		if Serial_number == nil then
-			local result11 = 999
-			table.insert(results_table,result11)
-		else
-		table.insert(results_table,term_code_table[Serial_number])
-		end
-		
-		table.move(DATA_TABLE,1,#DATA_TABLE,#results_table+1,results_table)
-	return ret,results_table
-
-
-end
-
-
-function resistance_value_code_clk270(Target_value,power_channel,lb_db,difference_value)
-	local Clk_DATA={
-		SMU_V=0.0;
-		SMU_C=0.0;	
-	}
-	local ret = 0
-	local DATA_TABLE = {}
-	local results_table={}
-	local bit_mask = 0x70        -- 目标位掩码（bit4~bit6=111，用于清空位域）
-	local bit_shift = 4          -- 目标位起始偏移（bit4，左移 4 位对齐）
-	local cycle_states = 8       -- 循环状态总数（3 位 bit 共 8 种）
-	local read_data = 0 
-	local term_code_table={}
-	local test_ohm_table={}
-	--efuse_write(val, 0x000c, bitwidth, bitStart)
-	--for term_code=0,7,1 do
-		--Start testing by gradually writing to the 0x000 register starting from 0x00
-		local original = i3c_read(0x000c)
-			  original= original & ~(0x1F << 12)
-		for cycle_idx = 0, cycle_states - 1 do
-
-    		local cleared = original & (~bit_mask)         
-    		local term_code = cleared | (cycle_idx << bit_shift)  
-
-    		LOG.INFO(string.format("loop %d ：0x%X",cycle_idx, term_code))
-			--end
-			--read_data = i3c_read(0x000c)
-			i3c_write(0x000c,term_code)
-			TIME.DELAY(10)
-			local readdd_data = i3c_read(0x000c)
-			LOG.INFO(string.format("read_data[%d]:0x%X",cycle_idx,readdd_data))
-			TIME.DELAY(300)
-			--Obtain the actual voltage and current of the SMU channel
-			Clk_DATA.SMU_V,Clk_DATA.SMU_C=POWER.VOL_CUR(power_channel)--The units are V, nA
-			
-			--Calculate the resistance value
-			local resistance_value = Clk_DATA.SMU_V/(Clk_DATA.SMU_C/1e9)
-			 resistance_value = resistance_value-lb_db
-			 table.insert(DATA_TABLE,Clk_DATA.SMU_V)
-			 
-			 table.insert(DATA_TABLE,Clk_DATA.SMU_C/1e9)
-			 table.insert(DATA_TABLE,resistance_value)
-			--Check if the calculated resistance value is within the range
-			local Impedance_result = check_best_resistance_value(Target_value,resistance_value,difference_value)
-			if Impedance_result then
-				table.insert(term_code_table,cycle_idx)
-				table.insert(test_ohm_table,resistance_value)
-				LOG.INFO(string.format("The closest impedance:0x%02x",term_code))
-			end
-			if #term_code_table == 0 and cycle_idx == 7 then
-				ret=1
-				
-			end
-		
-		end
-		LOG.INFO(#term_code_table)
-		--local Serial_number = closest(test_ohm_table,Target_value)
-		local Serial_number = closest(test_ohm_table,Target_value)
-		LOG.INFO(Serial_number)
-		if Serial_number == nil then
-			local result11 = 999
-			table.insert(results_table,result11)
-		else
-		table.insert(results_table,term_code_table[Serial_number])
-		end
-		
-		table.move(DATA_TABLE,1,#DATA_TABLE,#results_table+1,results_table)
-		LOG.INFO(ret)
-	return ret,results_table
-
-
-end
-
-function resistance_value_code_data90(Target_value,power_channel,lb_db,difference_value)
-	local Clk_DATA={
-		SMU_V=0.0;
-		SMU_C=0.0;	
-	}
-	local ret = 0
-	local DATA_TABLE = {}
-	local results_table={}
-	local bit_mask = 0x7000        -- 目标位掩码（bit4~bit6=111，用于清空位域）
-	local bit_shift = 12          -- 目标位起始偏移（bit4，左移 4 位对齐）
-	local cycle_states = 8       -- 循环状态总数（3 位 bit 共 8 种）
-	local read_data = 0 
-	local term_code_table={}
-	local test_ohm_table={}
-
-	--efuse_write(val, 0x000c, bitwidth, bitStart)
-	--for term_code=0,7,1 do
-		--Start testing by gradually writing to the 0x000 register starting from 0x00
-		--local original = i3c_read(0x000c)
-		local original = i3c_read(0x000c)
-			original= original & ~(0x1F << 4)
-		for cycle_idx = 0, cycle_states - 1 do
-
-    		local cleared = original & (~bit_mask)         
-    		local term_code = cleared | (cycle_idx << bit_shift)  
-
-    		LOG.INFO(string.format("loop %d ：0x%X",cycle_idx, term_code))
-			--end
-			--read_data = i3c_read(0x000c)
-			i3c_write(0x000c,term_code)
-			TIME.DELAY(10)
-			local readdd_data = i3c_read(0x000c)
-			LOG.INFO(string.format("read_data[%d]:0x%X",cycle_idx,readdd_data))
-			TIME.DELAY(300)
-			--Obtain the actual voltage and current of the SMU channel
-			Clk_DATA.SMU_V,Clk_DATA.SMU_C=POWER.VOL_CUR(power_channel)--The units are V, nA
-			
-			--Calculate the resistance value
-			local resistance_value = Clk_DATA.SMU_V/(Clk_DATA.SMU_C/1e9)
-			 resistance_value = resistance_value-lb_db
-			 
-			 table.insert(DATA_TABLE,Clk_DATA.SMU_V)
-			 
-			 table.insert(DATA_TABLE,Clk_DATA.SMU_C/1e9)
-			 table.insert(DATA_TABLE,resistance_value)
-			 
-			 
-			--Check if the calculated resistance value is within the range
-			local Impedance_result = check_best_resistance_value(Target_value,resistance_value,difference_value)
-			if Impedance_result then
-				table.insert(term_code_table,cycle_idx)
-				table.insert(test_ohm_table,resistance_value)
-				LOG.INFO(string.format("The closest impedance:0x%02x",term_code))
-			end
-			if #term_code_table == 0 and cycle_idx == 7 then
-				ret=1
-				
-			end
-		end
-		--test_ohm_table = {92}
-		--term_code_table = {4}
-		local Serial_number = closest(test_ohm_table,Target_value)
-		
-		if Serial_number == nil then
-			local result11 = 999
-			table.insert(results_table,result11)
-		else
-		table.insert(results_table,term_code_table[Serial_number])
-		end
-		
-		table.move(DATA_TABLE,1,#DATA_TABLE,#results_table+1,results_table)
-
-	return ret,results_table
-
-
-end
-
-function resistance_value_code_data270(Target_value,power_channel,lb_db,difference_value)
-	local Clk_DATA={
-		SMU_V=0.0;
-		SMU_C=0.0;	
-	}
-	local ret = 0
-	local DATA_TABLE = {}
-	local results_table={}
-	local bit_mask = 0x7000        -- 目标位掩码（bit4~bit6=111，用于清空位域）
-	local bit_shift = 12          -- 目标位起始偏移（bit4，左移 4 位对齐）
-	local cycle_states = 8       -- 循环状态总数（3 位 bit 共 8 种）
-	local read_data = 0 
-	local term_code_table={}
-	local test_ohm_table={}
-	--efuse_write(val, 0x000c, bitwidth, bitStart)
-	--for term_code=0,7,1 do
-		--Start testing by gradually writing to the 0x000 register starting from 0x00
-		local original = i3c_read(0x000c)
-		original= original & ~(0x1F << 4)
-		for cycle_idx = 0, cycle_states - 1 do
-
-    		local cleared = original & (~bit_mask)         
-    		local term_code = cleared | (cycle_idx << bit_shift)  
-
-    		LOG.INFO(string.format("loop %d ：0x%X",cycle_idx , term_code))
-			--end
-			--read_data = i3c_read(0x000c)
-			i3c_write(0x000c,term_code)
-			TIME.DELAY(10)
-			local readdd_data = i3c_read(0x000c)
-			LOG.INFO(string.format("read_data[%d]:0x%X",cycle_idx,readdd_data))
-			TIME.DELAY(300)
-			--Obtain the actual voltage and current of the SMU channel
-			Clk_DATA.SMU_V,Clk_DATA.SMU_C=POWER.VOL_CUR(power_channel)--The units are V, nA
-			
-			--Calculate the resistance value
-			local resistance_value = Clk_DATA.SMU_V/(Clk_DATA.SMU_C/1e9)
-			 resistance_value = resistance_value-lb_db
-			 table.insert(DATA_TABLE,Clk_DATA.SMU_V)
-			 
-			 table.insert(DATA_TABLE,Clk_DATA.SMU_C/1e9)
-			 table.insert(DATA_TABLE,resistance_value)
-			--Check if the calculated resistance value is within the range
-			local Impedance_result = check_best_resistance_value(Target_value,resistance_value,difference_value)
-			if Impedance_result then
-				table.insert(term_code_table,cycle_idx)
-				table.insert(test_ohm_table,resistance_value)
-				LOG.INFO(string.format("The closest impedance:0x%02x",term_code))
-			end
-			if #term_code_table == 0 and cycle_idx == 7 then
-				ret=1
-				
-			end
-		end
-		--local Serial_number = closest(test_ohm_table,Target_value)
-		local Serial_number = closest(test_ohm_table,Target_value)
-		
-		if Serial_number == nil then
-			local result11 = 999
-			table.insert(results_table,result11)
-		else
-		table.insert(results_table,term_code_table[Serial_number])
-		end
-		
-		table.move(DATA_TABLE,1,#DATA_TABLE,#results_table+1,results_table)
-		
-	return ret,results_table
-
-
-end
-
-function closest(test_ohm_table,ohm)
-    local args = test_ohm_table  -- 接收可变参数，转为列表
-    if #args == 1 then
-    	return 1
-    else
-	    if #args == 0 then 
-	    return nil 
-	    end  -- 空输入返回 nil
-	
-	    local closestVal = args[1]  -- 初始化：第一个值为候选
-	    local Serial_number = 1
-	    local minDiff = math.abs(closestVal - ohm)  -- 初始化最小差值
-	
-	    -- 遍历所有值，更新最小差值和对应的值
-	    for i = 2, #args do
-	        local currentVal = args[i]
-	        local currentDiff = math.abs(currentVal - ohm)
-	        if currentDiff < minDiff then  -- 找到更接近的，更新
-	            minDiff = currentDiff
-	            closestVal = currentVal
-	            Serial_number = i
-	        end
-	    end
-	    return Serial_number
-	end
-    
-end
-function check_best_resistance_value(Target_value,actual_value,percentage_difference)
-	--Calculate the difference in the resistance range
-	local difference_value = Target_value * (percentage_difference/100)
-	--Minimum range value of resistance
-	local minvalue = Target_value - difference_value
-	--Maximum range value of resistance
-	local maxvalue = Target_value + difference_value
-	LOG.INFO(string.format("Target_value:%.2f,actual_value:%.2f,Range[%.2f-%.2f]",Target_value,actual_value,minvalue,maxvalue))
-	--If the actual resistance value is within the range, return it; otherwise, return nil.
-	return (actual_value>=minvalue) and (actual_value<=maxvalue)
-
-end
-
-function DAC_WordpointA_B_Measurement()
-	POWER_ON_0x2D0()
-	local result_table = {}
-	local difference_value_34 = 0
-	local difference_value_341 = 0
-	local PointA =  EFuse_bits_read(0x110,12,0)
-	local PointB =  EFuse_bits_read(0x11C,12,4)
-	LOG.INFO(string.format("PointA:%d",PointA))
-	LOG.INFO(string.format("Pointb:%d",PointB))
-	PointA=PointA*5
-	PointB=PointB*5
-	LOG.INFO(string.format("PointA:0x%X",PointA))
-	LOG.INFO(string.format("Pointb:0x%X",PointB))
-	table.insert(result_table,PointA)
-	table.insert(result_table,PointB)
-	
-	local json_data = cjson.encode(result_table)
-	LOG.INFO(json_data)
-	return 0,json_data
-end
-
-function AVEE_Trim_Test()
-	local result_table = {}
-	local cur_change = 0
-	local cur_ratio = 0.0
-	local default_avee_mv = Power.ValueSetting.AVEE1
-	--LOG.INFO(string.format("V:%fmV",default_avee_mv))
-	local start_mV = default_avee_mv-500
-	local end_mV = default_avee_mv+500
-	local step_mV = 100
-	local last_cur = 0
-	local saturation_vol_mv = 0
-	local margin_vol_mv = 0
-	local threshold = 30----Resistance deviation range unit: %
-	local threshold1 = -threshold
-	local test_DATA = {}
-	--LOG.INFO(threshold)
-	--LOG.INFO(threshold1)
-	POWER_ON_0x2D0()
-	
-	for Set_voltage = start_mV,end_mV,step_mV do
-		--AVEE provides the corresponding voltage
-		AVEE1_OUT_V(Set_voltage)
-		TIME.DELAY(50)
-		--Read the voltage and current of AVEE
-		local Measure_vol,Measure_cur = POWER.VOL_CUR(6)
-		Measure_vol = Measure_vol * 1000--mV
-		Measure_cur = Measure_cur / 1e6--uA
-		--LOG.INFO(string.format("V:%fmV,C:%fuA",Measure_vol,Measure_cur))
-		
-		--Store the voltage and current values of AVEE under different voltages
-		table.insert(test_DATA,Measure_vol)
-		table.insert(test_DATA,Measure_cur)
-		if last_cur ~= 0 then
-		--Subtract the current measured current from the previous measured current, and then divide the resulting value by the previous measured current to calculate the current change rate.
-			cur_change = Measure_cur - last_cur
-			cur_ratio = (cur_change /last_cur)*100
-			--LOG.INFO(string.format("current change ratio:%f%%",cur_ratio))
-			LOG.INFO(string.format("cur_ratio:%f",cur_ratio))
-			--tore the saturation voltage value when the current change rate is less than five percent and the saturation voltage value is obtained for the first time.
-			if cur_ratio <= threshold and cur_ratio >= threshold1 and saturation_vol_mv == 0 then
-				saturation_vol_mv = Set_voltage
-				LOG.INFO(string.format("THE BEST F_AVEE_Trim: Saturation detected at %f mV (current change ratio: %.2f%%)", 
-                    saturation_vol_mv, cur_ratio))
-			end
-		end
-		
-		LOG.INFO(string.format("set vol:%.2fmV,Measure voltage:%.2fV,Measure current:%fmA",Set_voltage,Measure_vol,Measure_cur))
-		
-		--LOG.INFO(string.format("last_cur：%f",last_cur))
-		last_cur = Measure_cur
-	end
-
-	if saturation_vol_mv == 0 then
-		saturation_vol_mv = end_mV
-		local saturation_result = "Fail"
-		table.insert(result_table,saturation_result)
-		LOG.ERROR(string.format("F_AVEE_Trim: No saturation detected. Using end voltage %d mV as fallback.", 
-            saturation_vol_mv))
-    else
-    	
-
-		--Use the formula (AVEE - margin)/10 to calculate the value written to efuse
-		local target_avee_mv = math.abs(saturation_vol_mv) -margin_vol_mv
-		local efuse_value = math.floor(math.abs(target_avee_mv/10))
-		LOG.INFO(string.format("WRITE_efuse_value:0x%02X",efuse_value))
-		table.insert(result_table,efuse_value)
-	end
-	LOG.INFO(#test_DATA)
-	table.move(test_DATA,1,#test_DATA,#result_table+1,result_table)
-	i3c_write(0x7c,0x30000a5)
-
-	local json_data = cjson.encode(result_table)
-	--LOG.INFO(#json_data)
-	LOG.INFO(json_data)
-	LOG.INFO(#result_table)
-	return 0, json_data
-end
-
-
-function AVEE_SWEEP(DutyCyele)
-	Sw_by_name("W.bmp")
-	Set_DutState(ON)
-	local result_table = {}
-	local cur_change = 0
-	local cur_ratio = 0.0
-	--根据RGB设置1000-3000mV Red 2000-4000mV G B
-	local start_mV = -1000
-	local end_mV = -3000
-	local step_mV = -100
-	local test_DATA = {}
-	--local EFUSE_WRITE = 1----1=Enable efuse writing   0=Disable efuse writing
-	local efuse_value=0
-	
-	if 	Color ~= "Red" then
-		start_mV = -2000
-		end_mV = -4000
-	end
-
-	IIC_W_PEQUIN(0x7C, 0x30002D0) --TMG_RSYNC_CFG
-	for Set_voltage = start_mV,end_mV,step_mV do
-		--AVEE provides the corresponding voltage
-
-		AVEE1_OUT_V(Set_voltage)
-
-		--Sw_by_name("W0.bmp")
-		Set_Brightness(0)
-		local falg=0
-		if falg==0 then
-			TIME.DELAY(100)
-		else
-			TIME.DELAY(50)
-		end
-		--Read the voltage and current of AVEE
-		local Dark_Measure_vol,Dark_Measure_cur = POWER.VOL_CUR(6)--DARK
-		Dark_Measure_vol = Dark_Measure_vol * 1000--mV
-		Dark_Measure_cur = Dark_Measure_cur / 1e3--uA
-		table.insert(test_DATA,Dark_Measure_vol)
-		table.insert(test_DATA,Dark_Measure_cur / 1e3)--mA
-		--LOG.DEBUG(string.format("VOL->%f,CUR->%f",Dark_Measure_vol,Dark_Measure_cur))
-		Set_Brightness(DutyCyele)
-		TIME.DELAY(50)
-		local Active_Measure_vol,Active_Measure_cur = POWER.VOL_CUR(6)--active
-		Active_Measure_vol = Active_Measure_vol * 1000--mV
-		Active_Measure_cur = Active_Measure_cur / 1e3--uA
-		--table.insert(test_DATA,Measure_vol)
-		table.insert(test_DATA,Active_Measure_cur / 1e3)--mA
-		local Pixel_current=(Active_Measure_cur-Dark_Measure_cur)/(576*768*DutyCyele)
-		table.insert(test_DATA,Pixel_current)
-		
-		LOG.INFO(string.format("AVEE vol:%.2fmV,Dark_Measure_vol:%.2fV,Dark_Measure_Current:%fuA,Active_Measure_cur:%fuA,Pixel_current:%fuA",Set_voltage,Dark_Measure_vol,Dark_Measure_cur,Active_Measure_cur,Pixel_current))
-		
-		--local ret=SYS.IS_RUN_ERR()
-		--if ret ~=0 then
-			--SYS.CLR_RUN_ERR()
-			--return 0
-		--end
-		
-	end
-	Set_DutState(OFF)
-	AVEE1_OUT_V(Power.ValueSetting.AVEE1)
-	
-	local json_data = cjson.encode(test_DATA)
-
-	LOG.INFO(json_data)
-
-	return 0, json_data
-end
-
-
-
-
-
-
-function Active_Power_Test()
-	local result_table ={}
-	local VDD18_DATA = {
-		VOLTAGE = 0.0,    -- volts
-		CURRENT = 0.0,    -- amps
-	}
-	local VDD10_DATA = {
-		VOLTAGE = 0.0,    -- volts
-		CURRENT = 0.0,    -- amps
-	}
-	local AVEE_DATA = {
-		VOLTAGE = 0.0,    -- volts
-		CURRENT = 0.0,    -- amps
-	} 
-	DisplayOff()
-	TIME.DELAY(400)
-	POWER_ON_0x2D0()
-	TIME.DELAY(200)
-	--i3c_write(0x7c,0x30002d0)
-	--bitset_mode_swich(1)
-	TIME.DELAY(200)
-	VDD18_DATA.VOLTAGE, VDD18_DATA.CURRENT=POWER.VOL_CUR(P_VDD18)
-	VDD10_DATA.VOLTAGE, VDD10_DATA.CURRENT=POWER.VOL_CUR(P_VDD10_MIPI)
-	AVEE_DATA.VOLTAGE, AVEE_DATA.CURRENT=POWER.VOL_CUR(P_AVEE)
-	
-	VDD18_DATA.CURRENT = VDD18_DATA.CURRENT/1e6
-	VDD10_DATA.CURRENT = VDD10_DATA.CURRENT/1e6
-	AVEE_DATA.CURRENT  = AVEE_DATA.CURRENT/1e6
-	
-	i3c_write(0x7c,0x30000a5)
-	LOG.INFO(string.format("VDD18_DATA:%.4fV, %.4fmA",VDD18_DATA.VOLTAGE, VDD18_DATA.CURRENT))
-	LOG.INFO(string.format("VDD10_DATA:%.4fV, %.4fmA",VDD10_DATA.VOLTAGE, VDD10_DATA.CURRENT))
-	LOG.INFO(string.format("AVEE_DATA :%.4fV, %.4fmA",AVEE_DATA.VOLTAGE, AVEE_DATA.CURRENT))
-
-	table.insert(result_table,VDD18_DATA.CURRENT)
-	table.insert(result_table,VDD10_DATA.CURRENT)
-	table.insert(result_table,AVEE_DATA.CURRENT)
-	
-	local json_data = cjson.encode(result_table)
-	LOG.INFO(json_data)
-	return 0, json_data
-	
-end
-
-function Post_Initial_Current()
-	local result_table ={}
-	local VDD10_DATA_VOLTAGE = 0.0
-	local VDD18_DATA_VOLTAGE = 0.0
-	local AVEE_DATA_VOLTAGE = 0.0
-		
-	
-	local VDD10_DATA_CURRENT = 0.0
-	local VDD18_DATA_CURRENT = 0.0
-	local AVEE_DATA_CURRENT = 0.0
-	--Set_Color(color)
-	Post_Initial_ON()
-
-	TIME.DELAY(350)
-
-	VDD18_DATA_VOLTAGE, VDD18_DATA_CURRENT=POWER.VOL_CUR(P_VDD18)
-	VDD10_DATA_VOLTAGE, VDD10_DATA_CURRENT=POWER.VOL_CUR(P_VDD10_MIPI)
-	AVEE_DATA_VOLTAGE, AVEE_DATA_CURRENT=POWER.VOL_CUR(P_AVEE)
-	
-
-	VDD18_DATA_CURRENT = VDD18_DATA_CURRENT/1e6
-	VDD10_DATA_CURRENT = VDD10_DATA_CURRENT/1e6
-	AVEE_DATA_CURRENT  = AVEE_DATA_CURRENT/1e6
-	
-	LOG.INFO(string.format("VDD18_DATA:%.4fV, %.4fmA",VDD18_DATA_VOLTAGE, VDD18_DATA_CURRENT))
-	LOG.INFO(string.format("VDD10_DATA:%.4fV, %.4fmA",VDD10_DATA_VOLTAGE, VDD10_DATA_CURRENT))
-	LOG.INFO(string.format("AVEE_DATA :%.4fV, %.4fmA",AVEE_DATA_VOLTAGE, AVEE_DATA_CURRENT))
-	--POWER_OFF()
-	table.insert(result_table,VDD18_DATA_CURRENT)
-	table.insert(result_table,VDD10_DATA_CURRENT)
-	table.insert(result_table,AVEE_DATA_CURRENT)
-	
-	local json_data = cjson.encode(result_table)
-	LOG.INFO(json_data)
-	return 0 ,json_data
-end
-
-
+--I3C_Communication_Test()
 function I3C_Communication_Test()
 	LOG.DEBUG("<I3CCommunication_Test>")
-	
+
 	local ret = 0
 	local data_table = {}
 	local test_data = {
 		0xAAAAAAAA,
 		0x55555555,
-		0xFFFFFFFF,
+		0x5A5A5A5A,
+		0xA5A5A5A5,
 		0x00000000
-	}	
+	}
 
 	I3C_INIT()
 
 	TIME.DELAY(200)
 	for k, v in ipairs(test_data) do
-		I3C_W_PEQUIN(0x0FFC, v)
+		I3C_W_Tab2(0xEF, v)
 		--TIME.DELAY(10)
-		local read_data = I3C_R_PEQUIN(0x0FFC,4)
-		local hex_str = string.format("0x%08X",read_data)
+		local read_data = I3C_R_Tab2(0xEf, 4)
+		local hex_str = string.format("0x%08X", read_data)
 		println(hex_str)
-		table.insert(data_table,hex_str)
+		table.insert(data_table, hex_str)
 		if v ~= read_data then
-			LOG.ERROR("IIC read NG")
-			ret = -1 
+			LOG.ERROR("I3C read NG")
+			ret = -1
 		end
 	end
-	
-	IIC_CONFIG.init_default()
-	
+
+	--IIC_CONFIG.init_default()
+
 	local json_data = cjson.encode(data_table)
 	LOG.INFO(json_data)
-	return ret,json_data
-	
+	return ret, json_data
 end
 
---20260122 add
---I3C_Single_RW(0x0FFC,0x55555522)
-function I3C_Single_RW(addr,data)
-	LOG.DEBUG("<I3C_Single_RW>")
+file_id=ChannelID+100
+function F_Save_CSV(channel_id, target_res)
+     local Y = os.date("%Y")
+    local MON = os.date("%m", os.time())
+    local D = os.date("%d", os.time())
+    local timestamp = os.date("%H%M%S")
+    local file_type = "csv"
+    local file_name = string.format("C:\\AVEE_CURRENT\\%s\\%s\\%s\\CH%s\\ohm_%s_%s_smuCV.csv", Y, MON, D, channel_id, target_res,timestamp)
+    local head_Str = "target_ohm,SMU_V(V),SMU_C(uA)\n"
+    LOG.CREAT_FILE(file_id..","..file_type..","..file_name..","..head_Str)
+    LOG.INFO("CSV文件已创建："..file_name)
+end
+
+function Update_CSV(data)
+    LOG.WRITE_FILE(string.format("%s,%s", file_id, data))
+end
+
+
+--AVEE_current(12000,3)
+function AVEE_current(sum,channel)
 	local data_table = {}
-	local ret = 0
-	--POWER_OFF()
-	--TIME.DELAY(200)
-	I3C_INIT()
-	
-	I3C_W_PEQUIN(addr, data)
-	--TIME.DELAY(10)
-	local read_data = I3C_R_PEQUIN(addr)
-	local hex_str = string.format("0x%08X",read_data)
-	println(hex_str)
-	table.insert(data_table,hex_str)
-	if data ~= read_data then
-		LOG.ERROR("IIC read NG")
-		ret = -1
+	local csv_data_table = {}
+	local data = 0
+	for i = 1, sum, 1 do
+		TIME.DELAY(5)
+		local VOLTAGE, CURRENT = POWER.VOL_CUR(channel)
+		local current_uA = CURRENT / 1000.0
+		--LOG.INFO(string.format("CURRENT %.3fnA", CURRENT))
+		--pixel_current=((math.abs(CURRENT)/1000)-(math.abs(darkcurrent)/1000))/(768*576*DutyCycle)
+		table.insert(csv_data_table, {i,current_uA})
 	end
 	
-	IIC_CONFIG.init_default()
-	--POWER_OFF() --20251223 add
-	local json_data = cjson.encode(data_table)
-	LOG.INFO(json_data)
-	return ret,json_data
+	F_Save_CSV(channel, 1120)
 	
+	for i =1, #csv_data_table do
+		local row = csv_data_table[i]
+		Update_CSV(row[1]..",")
+		Update_CSV(row[2].."\n")
+	end
+	--table.sort(data_table)
+	--table.remove(data_table, 1)
+	--table.remove(data_table, #data_table)
+	----LOG.INFO(#data_table)
+	--for i = 1, #data_table, 1 do
+		--data = data + data_table[i]
+	--end
+	----LOG.INFO(#data_table)
+	--data = data / #data_table
+	--LOG.INFO(string.format("CURRENT %.3fmA", data/1000000))
+	return 1
 end
---20260122 add
 
---20260113 ADD
-function Efuse_post_write()
-	--if EFUSE_WRITE==1 then
-		LOG.INFO("==========Efuse Write B5 TO 0X8==========")
-		local result_table={}
-		local val_B5 = 0x8
-		local addressLSB_B5 = 0xD4
-		local bitwidth_B5 = 4
-		local bitStart_B5 = 4
-		local Efuse_write_flag_B5=efuse_write(val_B5, addressLSB_B5, bitwidth_B5, bitStart_B5)
-		table.insert(result_table,Efuse_write_flag_B5)
-		local post_data_B5 = EFuse_bits_read(addressLSB_B5, bitwidth_B5, bitStart_B5)
-		if post_data_B5 ~= 0x8 then
-			LOG.ERROR("Efuse_Write ERROR,Plese Check!!!!")
-			LOG.ERROR(string.format("Efuse_Write:%d,Efuse_Read:%d",0x8,post_data_B5))
-			
-			table.insert(result_table,val_B5)
-			table.insert(result_table,post_data_B5)
-			table.insert(result_table,0)
-		else
-			local result_B5=post_data_B5CRCforTempSensorBlock
-			table.insert(result_table,val_B5)
-			table.insert(result_table,post_data_B5)
-			table.insert(result_table,1)
-			LOG.INFO(string.format("B5 Write sucess:%d",post_data_B5))
-		end
+function Average_current()
+	local data_table = {}
+	local data = 0
+	for i = 1, 400, 1 do
+		TIME.DELAY(5)
+		local VOLTAGE, CURRENT = POWER.VOL_CUR(6)
+		--LOG.INFO(string.format("CURRENT %.3fnA", CURRENT))
+		--pixel_current=((math.abs(CURRENT)/1000)-(math.abs(darkcurrent)/1000))/(768*576*DutyCycle)
+		table.insert(data_table, CURRENT)
+	end
+	table.sort(data_table)
+	table.remove(data_table, 1)
+	table.remove(data_table, #data_table)
+	--LOG.INFO(#data_table)
+	for i = 1, #data_table, 1 do
+		data = data + data_table[i]
+	end
+	--LOG.INFO(#data_table)
+	data = data / #data_table
+	LOG.INFO(string.format("CURRENT %.3fmA", data/1000000))
+	return data
+end
+
+--function Average_current()
+    --local data_table = {}
+    --local n = 120
+    --for i = 1, n, 1 do
+        --TIME.DELAY(5)
+        --local VOLTAGE, CURRENT = POWER.VOL_CUR(6)
+        ----LOG.INFO(string.format("CURRENT %.3fnA", CURRENT))
+        --table.insert(data_table, CURRENT)
+    --end
+    --table.sort(data_table)
+    ---- median: middle value, or mean of the two middle values when n is even
+    --local data
+    --if n % 2 == 0 then
+        --data = (data_table[n // 2] + data_table[n // 2 + 1]) / 2
+    --else
+        --data = data_table[(n + 1) // 2]
+    --end
+        --LOG.INFO(string.format("CURRENT %.3fmA", data / 1000000))
+        --return data
+--end
+
+--function Average_current()
+	--local data_table = {}
+	--local data = 0
+	--for i = 1, 400, 1 do
+		--TIME.DELAY(4)
+		--local VOLTAGE, CURRENT = POWER.VOL_CUR(6)
+		----pixel_current=((math.abs(CURRENT)/1000)-(math.abs(darkcurrent)/1000))/(768*576*DutyCycle)
+		----table.insert(data_table, CURRENT)
+		--data_table[i] = CURRENT
+	--end
+	--table.sort(data_table)
 	
-	local json_data = cjson.encode(result_table)
-	LOG.INFO(json_data)
-	return 0,json_data
+	--local trim_count = math.floor(400 * 0.05)
+	--local valid_count = 400 - 2*trim_count
+	--local sum = 0
+	
+	--for i = trim_count + 1, 400 - trim_count, 1 do
+		--sum = sum + data_table[i]
+	--end
 
-end
-function DAC_WordpointA_B_Measurement_pixel()
+	--local average = sum / valid_count
+	--return average
+--end
 
+--[[
+Function: Power_Measurement
+Desc: Single power rail voltage & current sampling. Remove max/min then calculate average.
+Input:
+    channel_name : Power rail name, support SMU1/SMU2/VQPS/VDDIO/DVDD/AVDD/AVEE1
+Return:
+    0           : Success; -1: invalid channel
+    result_table: Json string of [avg_voltage, avg_current(mA)]
+--]]
+--Power_Measurement("AVEE1",300)
+--Power_Measurement("AVEE1")
+function Power_Measurement(channel_name, samples)
 	local result_table = {}
-	local DATA_TABLE={}
-	
-	
-	local PointA =  raw_values["POINTA"] or EFuse_bits_read(0x110,12,0)
-	local PointB =  raw_values["POINTB"] or EFuse_bits_read(0x11C,12,4)
-	PointA=PointA*5
-	PointB=PointB*5
-	LOG.INFO(string.format("PointA:%d",PointA))
-	LOG.INFO(string.format("Pointb:%d",PointB))
-
-	table.insert(DATA_TABLE,PointA/2)
-	table.insert(DATA_TABLE,PointB/2)
-	return DATA_TABLE
-end
---bist_mode_swich_EN(1,0)
-function bist_mode_swich_EN(mode,EN)
-	if mode == 1 then
-		println("All-On (Flat field)") 
-		i3c_write(0xB0, 0xFFFF) --VPG_DATA
-		i3c_write(0x9C, 0x00000003) --VPG_CTRL
-	elseif mode == 2 then
-		println("All-Off")
-		i3c_write(0xB0, 0x0000) --VPG_DATA
-		i3c_write(0x9C, 0x00000003) --VPG_CTRL
-	elseif mode == 3 then
-		println("CHKBRD_16X16")
-		i3c_write(0xB0, 0x00FF) --VPG_DATA
-		i3c_write(0xB4, 0x100010) --VPG_BAR_CHK_CFG  0x40000
-		i3c_write(0x9C, 0x00000303) --VPG_CTRL
-	elseif mode == 4 then
-		println("INVCHKBRD_16X16")
-		i3c_write(0xB0, 0xFF00) --VPG_DATA
-		i3c_write(0xB4, 0x100010) --VPG_BAR_CHK_CFG  0x40000
-		i3c_write(0x9C, 0x00000303) --VPG_CTRL
-	elseif mode == 5 then
-		println("CHKBRD_32X32")
-		i3c_write(0xB0, 0x00FF) --VPG_DATA
-		i3c_write(0xB4, 0x200020) --VPG_BAR_CHK_CFG  0x40000
-		i3c_write(0x9C, 0x00000303) --VPG_CTRL
-	elseif mode == 6 then
-		println("INVCHKBRD_32X32")
-		i3c_write(0xB0, 0xFF00) --VPG_DATA
-		i3c_write(0xB4, 0x200020) --VPG_BAR_CHK_CFG  0x40000
-		i3c_write(0x9C, 0x00000303) --VPG_CTRL
-	elseif mode == 7 then
-		println("CHKBRD_64X64")
-		i3c_write(0xB0, 0x00FF) --VPG_DATA
-		i3c_write(0xB4, 0x400040) --VPG_BAR_CHK_CFG
-		i3c_write(0x9C, 0x00000303) --VPG_CTRL
-	elseif mode == 8 then
-		println("CHKBRD_64X64")
-		i3c_write(0xB0, 0xFF00) --VPG_DATA
-		i3c_write(0xB4, 0x400040) --VPG_BAR_CHK_CFG
-		i3c_write(0x9C, 0x00000303) --VPG_CTRL
-	elseif mode == 9 then
-		println("9-Crosses")
-		i3c_write(0xB0, 0x00FF) --VPG_DATA
-		i3c_write(0xC0, 0x351440C8) --VPG_9_CROSS_CFG
-		i3c_write(0x9C, 0x00000703) --VPG_CTRL
-	elseif mode == 10 then
-		println("Repeated Slice Tile  (Sparse Grid)")
-		i3c_write(0xB0, 0x00FF) --VPG_DATA
-		i3c_write(0xC4, 0x22228888) -- VPG_SLICE_AB
-		i3c_write(0xC8, 0x03) --VPG_9_CROSS_CFG
-		i3c_write(0x9C, 0x00000803) --VPG_CTRL
-	elseif mode == 11 then
-		println("VPG_SPARSEDGRID_X0Y0")
-		i3c_write(0xB0, 0x00FF) --VPG_DATA
-		i3c_write(0xC4, 0x11111111) -- VPG_SLICE_AB
-		i3c_write(0xC8, 0x02) --VPG_9_CROSS_CFG
-		i3c_write(0x9C, 0x00000803) --VPG_CTRL
-	elseif mode == 12 then
-		println("VPG_SPARSEDGRID_X1Y0")
-		i3c_write(0xB0, 0x00FF) --VPG_DATA
-		i3c_write(0xC4, 0x22222222) -- VPG_SLICE_AB
-		i3c_write(0xC8, 0x02) --VPG_9_CROSS_CFG
-		i3c_write(0x9C, 0x00000803) --VPG_CTRL
-	elseif mode == 13 then
-		println("VPG_SPARSEDGRID_X2Y0")
-		i3c_write(0xB0, 0x00FF) --VPG_DATA
-		i3c_write(0xC4, 0x44444444) -- VPG_SLICE_AB
-		i3c_write(0xC8, 0x02) --VPG_9_CROSS_CFG
-		i3c_write(0x9C, 0x00000803) --VPG_CTRL
-	elseif mode == 14 then
-		println("VPG_SPARSEDGRID_X3Y0")
-		i3c_write(0xB0, 0x00FF) --VPG_DATA
-		i3c_write(0xC4, 0x88888888) -- VPG_SLICE_AB
-		i3c_write(0xC8, 0x02) --VPG_9_CROSS_CFG
-		i3c_write(0x9C, 0x00000803) --VPG_CTRL
-	elseif mode == 15 then
-		println("VPG_SPARSEDGRID_X0Y1")
-		i3c_write(0xB0, 0x00FF) --VPG_DATA
-		i3c_write(0xC4, 0x11111111) -- VPG_SLICE_AB
-		i3c_write(0xC8, 0x102) --VPG_9_CROSS_CFG
-		i3c_write(0x9C, 0x00000803) --VPG_CTRL
-	elseif mode == 16 then
-		println("VPG_SPARSEDGRID_X1Y1")
-		i3c_write(0xB0, 0x00FF) --VPG_DATA
-		i3c_write(0xC4, 0x22222222) -- VPG_SLICE_AB
-		i3c_write(0xC8, 0x102) --VPG_9_CROSS_CFG
-		i3c_write(0x9C, 0x00000803) --VPG_CTRL
-	elseif mode == 17 then
-		println("VPG_SPARSEDGRID_X2Y1")
-		i3c_write(0xB0, 0x00FF) --VPG_DATA
-		i3c_write(0xC4, 0x44444444) -- VPG_SLICE_AB
-		i3c_write(0xC8, 0x102) --VPG_9_CROSS_CFG
-		i3c_write(0x9C, 0x00000803) --VPG_CTRL
-	elseif mode == 18 then
-		println("VPG_SPARSEDGRID_X3Y1")
-		i3c_write(0xB0, 0x00FF) --VPG_DATA
-		i3c_write(0xC4, 0x88888888) -- VPG_SLICE_AB
-		i3c_write(0xC8, 0x102) --VPG_9_CROSS_CFG
-		i3c_write(0x9C, 0x00000803) --VPG_CTRL
-	elseif mode == 19 then
-		println("VPG_SPARSEDGRID_X0Y2")
-		i3c_write(0xB0, 0x00FF) --VPG_DATA
-		i3c_write(0xC4, 0x11111111) -- VPG_SLICE_AB
-		i3c_write(0xC8, 0x202) --VPG_9_CROSS_CFG
-		i3c_write(0x9C, 0x00000803) --VPG_CTRL
-	elseif mode == 20 then
-		println("VPG_SPARSEDGRID_X1Y2")
-		i3c_write(0xB0, 0x00FF) --VPG_DATA
-		i3c_write(0xC4, 0x22222222) -- VPG_SLICE_AB
-		i3c_write(0xC8, 0x202) --VPG_9_CROSS_CFG
-		i3c_write(0x9C, 0x00000803) --VPG_CTRL
-	elseif mode == 21 then
-		println("VPG_SPARSEDGRID_X2Y2")
-		i3c_write(0xB0, 0x00FF) --VPG_DATA
-		i3c_write(0xC4, 0x44444444) -- VPG_SLICE_AB
-		i3c_write(0xC8, 0x202) --VPG_9_CROSS_CFG
-		i3c_write(0x9C, 0x00000803) --VPG_CTRL
-	elseif mode == 22 then
-		println("VPG_SPARSEDGRID_X3Y2")
-		i3c_write(0xB0, 0x00FF) --VPG_DATA
-		i3c_write(0xC4, 0x88888888) -- VPG_SLICE_AB
-		i3c_write(0xC8, 0x202) --VPG_9_CROSS_CFG
-		i3c_write(0x9C, 0x00000803) --VPG_CTRL
-	elseif mode == 23 then
-		println("CHKBRD_54X54")
-		i3c_write(0xB0, 0xFF00) --VPG_DATA
-		i3c_write(0xB4, 0x360036) --VPG_BAR_CHK_CFG
-		i3c_write(0x9C, 0x00000303) --VPG_CTRL
-	elseif mode == 24 then
-		println("INVCHKBRD_54X54")
-		i3c_write(0xB0, 0x00FF) --VPG_DATA
-		i3c_write(0xB4, 0x360036) --VPG_STRIPE_H
-		i3c_write(0x9C, 0x00000303) --VPG_CTRL
+	local average_current_table = {}
+	local average_voltage_table = {}
+	local average_current = 0
+	local average_voltage = 0
+	local POWER_DATA_VOLTAGE = 0.0
+	local POWER_DATA_CURRENT = 0.0
+	--local samples = 4000
+	if samples == nil then
+		samples = 40
 	end
-	TIME.DELAY(10)
-	if EN == 1 then
-	   --IIC_W_PEQUIN(0x9C, 0x00000003) --VPG_CTRL
-	   --TIME.DELAY(10)
-	   IIC_W_PEQUIN(0x70, 0x40000003) --TMG_CTRL
-	   TIME.DELAY(10)
-	   IIC_W_PEQUIN(0x70, 0x80000001) --TMG_CTRL
-	   TIME.DELAY(10)
+	local channel_map = {
+		["SMU1"]  = 0,
+		["SMU2"]  = 1,
+		["VQPS"]  = 2,
+		["VDDIO"] = 3,
+		["DVDD"]  = 4,
+		["AVDD"]  = 5,
+		["AVEE1"] = 6
+	}
+
+	local ch_num = channel_map[channel_name]
+	if ch_num == nil then
+		LOG.ERROR(string.format("ERROR: invalid channel name [%s]", tostring(channel_name)))
+		table.insert(result_table, -9999)
+		table.insert(result_table, -9999)
+		local json_data_err = cjson.encode(result_table)
+		LOG.INFO(json_data_err)
+		return 0, json_data_err
+	end
+	--TIME.DELAY(1000)
+	for i = 1, samples do
+		TIME.DELAY(5)
+		VOLTAGE, CURRENT = POWER.VOL_CUR(ch_num)
+		table.insert(average_current_table, CURRENT)
+		table.insert(average_voltage_table, VOLTAGE)
+		LOG.INFO(string.format("[%d]：%.15fA, %15fV", i, CURRENT, VOLTAGE))
+	end
+	table.sort(average_current_table)
+	table.sort(average_voltage_table)
+	table.remove(average_current_table, 1)
+	table.remove(average_voltage_table, 1)
+	table.remove(average_current_table, #average_current_table)
+	table.remove(average_voltage_table, #average_voltage_table)
+	for _, val in ipairs(average_current_table) do
+		average_current = average_current + val
+	end
+	for _, val in ipairs(average_voltage_table) do
+		average_voltage = average_voltage + val
+	end
+	average_current = average_current / #average_current_table
+	average_voltage = average_voltage / #average_voltage_table
+	LOG.INFO(string.format("%.3fA, %.3fV", average_current, average_voltage))
+
+	POWER_DATA_VOLTAGE = average_voltage
+	POWER_DATA_CURRENT = average_current / 1e6
+
+	LOG.INFO(string.format("AVEE_DATA :%.4fV, %.4fmA", POWER_DATA_VOLTAGE, POWER_DATA_CURRENT))
+	table.insert(result_table, POWER_DATA_VOLTAGE)
+	table.insert(result_table, POWER_DATA_CURRENT)
+
+	result_table = cjson.encode(result_table)
+	LOG.INFO(result_table)
+
+	return 0, result_table
+end
+
+--[[
+	Function: bist_mode_swich_EN
+	Desc:Set VPG Pattern
+	Input:number en
+--]]
+
+--bist_mode_swich_EN(7,1)
+function bist_mode_swich_EN(num, en)
+	local run = 1
+	if num == 1 then
+		VPG_SetFlatField(255)
+	elseif num == 2 then
+		VPG_SetFlatField(0)
+	elseif num == 3 then
+		VPG_SetCheckerboard(255, 16, 16)
+	elseif num == 5 then
+		VPG_SetCheckerboard(255, 32, 32)
+	elseif num == 7 then
+		VPG_SetCheckerboard(255, 64, 64)
+	elseif num == 8 then
+		VPG_SetCheckerboard(0, 64, 64) -- Invert checkerboard
+	else
+		run = 0
+		LOG.INFO(string.format("run = 0"))
+	end
+
+	if run == 0 then
+		if num >= 1 and num <= 24 then
+			LOG.INFO(string.format("bist_mode_swich_EN: num = %d backup function", num))
+		else
+			LOG.ERROR(string.format("bist_mode_swich_EN: num = %d out of range[1~24]", num))
+		end
+		return -1
 	end
 
 	return 0
 end
---apply_calibrated_bandgap_trim_test_two(1)
-function apply_calibrated_bandgap_trim_test_two(EN)---0:禁用阴极，1：使能阴极
-	println("apply_calibrated_bandgap_trim_test_two")
-	
-	if EN ~= 0 and EN ~= 1 then EN = 1 end
-	local dac_ctrl =  0x00000000 | (Bandgap_code << 4)|EN
-	i3c_write(0x00CC, dac_ctrl)
-	println("Apply Bandgap_code:0x%08X",dac_ctrl)
+
+--[[
+Function: VPG_9SQUARE_FRC
+Desc: VPG pattern generator, generate 9 square cross pattern.
+Input:
+    cx : Cross center X coordinate
+    cy : Cross center Y coordinate
+    ox : Cross offset X
+    oy : Cross offset Y
+Return: None
+--]]
+--  VPG_9SQUARE_FRC(928, 736, 300, 300)
+--  VPG_SetCheckerboard(255,128,128)
+function VPG_9SQUARE_FRC(cx, cy, ox, oy)
+	VPG_SetFlatField(255)
+	TIME.DELAY(20)
+	local data_buf = {
+		-- 1st P: PG_SEL=5, PG_MODE_EN=1
+		0xB1,
+		-- 2nd ~ 20th
+		0xff, -- 2 PG_SHADE
+		0x00, -- 3 PG_BAR_WIDTH[10:8]
+		0x10, -- 4 PG_BAR_WIDTH[7:0]
+		0x00, -- 5 PG_BLK_VSIZE[10:8]
+		0x10, -- 6 PG_BLK_VSIZE[7:0]
+		0x00, -- 7 PG_BLK_HSIZE[10:8]
+		0x10, -- 8 PG_BLK_HSIZE[7:0]
+		0x02, -- 9 PG_VLINE[10:8]
+		0xE0, --10 PG_VLINE[7:0]
+		0x03, --11 PG_HLINE[10:8]
+		0xA0, --12 PG_HLINE[7:0]
+		0x00, --13 PG_PAT_VSIZE[10:8]
+		0x10, --14 PG_PAT_VSIZE[7:0]
+		0x00, --15 PG_PAT_HSIZE[10:8]
+		0x10, --16 PG_PAT_HSIZE[7:0]
+		0x00, --17 PG_PAT_X[10:8]
+		0x01, --18 PG_PAT_X[7:0]
+		0x00, --19 PG_PAT_Y[10:8]
+		0x01, --20 PG_PAT_Y[7:0]
+		0x01, --21 PG_PAT_Y[7:0]
+		0x01, --22 PG_PAT_Y[7:0]
+		0x01, --23 PG_PAT_Y[7:0]
+		0x01, --24 PG_PAT_Y[7:0]
+		0x01, --25 PG_PAT_Y[7:0]
+		0x01, --26 PG_PAT_Y[7:0]
+		0x01, --27 PG_PAT_Y[7:0]
+		0x01, --28 PG_PAT_Y[7:0]
+
+		-- 29~32 中心十字坐标（传入参数）
+		(cx >> 8) & 0x07, --29 PG_CROSS_CENTER_X[10:8]
+		cx & 0xFF,  --30 PG_CROSS_CENTER_X[7:0]
+		(cy >> 8) & 0x07, --31 PG_CROSS_CENTER_Y[10:8]
+		cy & 0xFF,  --32 PG_CROSS_CENTER_Y[7:0]
+
+		-- 33~36 十字偏移量
+		(ox >> 8) & 0x07, --33 PG_CROSS_OFFSET_X[10:8]
+		ox & 0xFF,  --34 PG_CROSS_OFFSET_X[7:0]
+		(oy >> 8) & 0x07, --35 PG_CROSS_OFFSET_Y[10:8]
+		oy & 0xFF   --36 PG_CROSS_OFFSET_Y[7:0]
+	}
+
+	IIC_W_Tab2(0xF6, { 0x00, 0x00, 0x3f })
+	IIC_W_Tab2(0xFA, data_buf)
+
+	LOG.INFO(string.format(
+		"9Cross: CX=%d,CY=%d,OX=%d,OY=%d",
+		cx, cy, ox, oy
+	))
 end
 
---20260116 ADD
- function test_temperature_sensor_thermometer()
- 	local tim1 = TIME.TICK()
-    local results = {}
-	--PPMU.CAL_EN(1)    --5V off 
-	Power.ValueSetting.SMU2 = 0
-	SMU2(ON,1,0x82)
-	TIME.DELAY(50)
-    
-    i3c_write(0x00CC, 0x00000000) -- ANLG_CTRL - BG disable = 0
-    --apply_calibrated_bandgap_trim_test_two(1)--test_temperature_sensor_adc 已操作
-    --#2:Enable thermometers, ADCs and manual mode
-    i3c_write(0x00F0, 0x00000170)
-    i3c_write(0x00EC, 0x00000012) -- TEMP_SENS_CTRL - THERM_EN, ADC_EN, RESET_ADC
-    --#3:Enable TEMP_TPAD output and disable auto sampling
+--[[
+Function: VPG_9POINT_FRC
+Desc: VPG pattern generator, generate 9 point pattern.
+Input:
+    cx : Center X coordinate
+    cy : Center Y coordinate
+    ox : Offset X
+    oy : Offset Y
+Return: None
+--]]
 
-    local temp_sensors = {0,1} -- VTherm 0 and VTherm 1
-    for _, sensor in ipairs(temp_sensors) do
-    	--i3c_write(0x00F0, 0x00000110) -- TEMP_SAMP_CTRL
-        -- 1. do manual temp sensor sampling
-        local adc_source = sensor + 1 -- VTherm 0 = 001, VTherm 1 = 010
-        local samp_ctrl = 0x00000100 | (adc_source << 4)
-        i3c_write(0x00F0, samp_ctrl)
-        TIME.DELAY(100)
-        i3c_write(0x00F0, samp_ctrl | (1 << 1))
-        TIME.DELAY(10)
-        -- 2. Read ADC code and measure voltage
-        local adc_code = i3c_read(0x0104) & 0x3FF-- TEMP_ADC_RAW_VAL[9:0]
-        LOG.INFO(string.format("TEMP SENSOR CODE:0X%x",adc_code))
-        if sensor == 0 then
-            thermal_sensor0_code=adc_code
-        else
-            thermal_sensor1_code=adc_code
-        end
-		local measured_voltage, measured_current = POWER.VOL_CUR(P_SMU2) --SMU2: Temp_tpad  config mode?
-		println("sensor%d_measured_voltage:%.4f",sensor,measured_voltage)
-		table.insert(results,measured_voltage)--TPAD实际电压
-    end
-    SMU2(OFF, 0)
-    table.insert(results,1000)--预期电压--暂不清楚，先返回任意打印
-    table.insert(results,1000)--预期电压--暂不清楚，先返回任意打印
-    
- 	table.insert(results,thermal_sensor0_code)--50 ℃时ADC值
- 	table.insert(results,thermal_sensor1_code)--50 ℃时ADC值
- 	
-	--table.insert(results,caled_temp_point)--实际温度50℃  
-	--table.insert(results,caled_temp_point)--实际温度50℃  
- 	
+--VPG_9POINT_FRC(928, 736, 300, 300)
+function VPG_9POINT_FRC(cx, cy, ox, oy)
+	VPG_SetFlatField(255)
+	TIME.DELAY(20)
+	local data_buf = {
+		-- 1st P: PG_SEL=5, PG_MODE_EN=1
+		0x51,
+		-- 2nd ~ 20th
+		0xff, -- 2 PG_SHADE
+		0x00, -- 3 PG_BAR_WIDTH[10:8]
+		0x10, -- 4 PG_BAR_WIDTH[7:0]
+		0x00, -- 5 PG_BLK_VSIZE[10:8]
+		0x10, -- 6 PG_BLK_VSIZE[7:0]
+		0x00, -- 7 PG_BLK_HSIZE[10:8]
+		0x10, -- 8 PG_BLK_HSIZE[7:0]
+		0x02, -- 9 PG_VLINE[10:8]
+		0xE0, --10 PG_VLINE[7:0]
+		0x03, --11 PG_HLINE[10:8]
+		0xA0, --12 PG_HLINE[7:0]
+		0x00, --13 PG_PAT_VSIZE[10:8]
+		0x10, --14 PG_PAT_VSIZE[7:0]
+		0x00, --15 PG_PAT_HSIZE[10:8]
+		0x10, --16 PG_PAT_HSIZE[7:0]
+		0x00, --17 PG_PAT_X[10:8]
+		0x01, --18 PG_PAT_X[7:0]
+		0x00, --19 PG_PAT_Y[10:8]
+		0x01, --20 PG_PAT_Y[7:0]
+
+
+
+		-- 21~24 中心十字坐标（传入参数）
+		(cx >> 8) & 0x07, --21 PG_CROSS_CENTER_X[10:8]
+		cx & 0xFF,  --22 PG_CROSS_CENTER_X[7:0]
+		(cy >> 8) & 0x07, --23 PG_CROSS_CENTER_Y[10:8]
+		cy & 0xFF,  --24 PG_CROSS_CENTER_Y[7:0]
+
+		-- 25~28 十字偏移量
+		(ox >> 8) & 0x07, --25 PG_CROSS_OFFSET_X[10:8]
+		ox & 0xFF,  --26 PG_CROSS_OFFSET_X[7:0]
+		(oy >> 8) & 0x07, --27 PG_CROSS_OFFSET_Y[10:8]
+		oy & 0xFF   --28 PG_CROSS_OFFSET_Y[7:0]
+	}
+
+	IIC_W_Tab2(0xF6, { 0x00, 0x00, 0x7f })
+	IIC_W_Tab2(0xFA, data_buf)
+
+	LOG.INFO(string.format(
+		"9Cross: CX=%d,CY=%d,OX=%d,OY=%d",
+		cx, cy, ox, oy
+	))
+end
+
+--[[
+Function: EFuse_DieID_Read
+Desc: Read EFuse area including DieID. Unlock efuse register, read 256 bytes data then lock.
+Input: None
+Return:
+    1          : Return status
+    json_data  : Json string of efuse raw byte array
+--]]
+--EFuse_DieID_Read()
+function EFuse_DieID_Read()
+	local efuse_data = {}
+	local val_table = {}
+	VQPS(ON)
+	TIME.DELAY(1000)
+
+	IIC_W_Tab2(0xF0, 0x5A5A)      --Level2 Key
+	IIC_W_Tab2(0xF1, 0x5A5A)      --OTP(efuse) key
+	IIC_W_Tab2(0xC0, { 0x01, 0x01 }) --OTP(efuse) Control
+	TIME.DELAY(5)
+
+	IIC_W_Tab2(0xC0, 0x0000)
+
+	val_table, efuse_data = IIC_R_Tab2(0xC1, 256)
+
+	local json_data = cjson.encode(efuse_data)
+	LOG.INFO(json_data)
+
+	--for i = 1, #efuse_data do
+	--println("efuse_data[%d]=%02X", i, efuse_data[i])
+	--end
+
+	IIC_W_Tab2(0xF0, 0xA5A5) --Level2 Key
+	IIC_W_Tab2(0xF1, 0xA5A5) --OTP(efuse) key
+
+	VQPS(OFF)
+
+	return 1, json_data
+end
+
+--[[
+Function: EFuse_write256bit
+Desc: Write single byte to EFuse. Unlock EFuse, write data buffer and trigger program, then lock.
+Input:
+    offset : EFuse buffer index(start from 1)
+    val    : Byte value to program
+Return:
+    1 : Function complete status
+--]]
+--IIC_R_Tab2(0xF1,2)
+--EFuse_write256bit(16,0x56)
+function EFuse_write256bit(offset, val)
+	local efuse_buf = {}
+	for i = 1, 255 do
+		efuse_buf[i] = 0x00
+	end
+	efuse_buf[offset] = val
+	VQPS(ON)
+	TIME.DELAY(1000)
+
+	IIC_W_Tab2(0xF0, 0x5A5A)
+	IIC_W_Tab2(0xF1, 0x5A5A)
+	IIC_W_Tab2(0xC1, efuse_buf) --OTP User
+	IIC_W_Tab2(0xC0, { 0x02, 0x00, 0x00 })
+
+
+	TIME.DELAY(30)
+
+	IIC_W_Tab2(0xC0, 0x0000) --OTP(efuse) Control
+	IIC_W_Tab2(0xF0, 0xA5A5) --Level2 Key
+	IIC_W_Tab2(0xF1, 0xA5A5) --OTP(efuse) key
+
+	VQPS(OFF)
+
+	LOG.INFO(string.format("EFuse  ,offset %d set val=0x%02x", offset, val))
+	return 1
+end
+
+file_id = 100
+function DAC_Full_Range_Calibration()
+	local results = {}
+	local current_table = {}
+	local best_trim = nil
+	local best_diff = math.huge
+	local target_uA = 5.2
+	local best_current = nil
+	local dac_current = 0
+	local notFound = 0
+
+	local tim1 = TIME.TICK()
+	PPMU.CAL_EN(0) --5V on
+	GPIO6_A_SET(1)
+	GPIO3_A_SET(0)
+	GPIO2_A_SET(1)
+
+	IIC_W_Tab2(0xFD, { 0x00, 0x00, 0x00 })
+	IIC_R_Tab2(0xFD, 3)
+	--PPMU.CAL_EN(1)    --5V off
+
+	TIME.DELAY(10)
+
+	Power.ValueSetting.SMU2 = 0
+	SMU2(ON, 0, 0x82)
+	TIME.DELAY(1000)
+	local Vol, leakageCurrent = POWER.VOL_CUR(P_SMU2)
+	LOG.INFO(string.format("Pre?set Current:%f", leakageCurrent))
+
+	IIC.WRITE(0x60, { 0xF0 }, { 0x5a, 0x5a })
+	IIC.WRITE(0x60, { 0xF1 }, { 0x5a, 0x5a })
+	IIC.WRITE(0x60, { 0xFc }, { 0x5a, 0x5a })
+	IIC_W_Tab2(0xFD, { 0x00, 0x02, 0x94 }) --ANALOGTEST
+
+	TIME.DELAY(100)
+	--IIC_W_Tab2(0xF7, {0x03, 0x00, 0x00,0x00, 0x00,0x00, 0x00})
+
+
+
+	for trim_val = 0, 511, 5 do
+		LOG.INFO(string.format("===== Test PBIAS_IPXL_TRIM = %d =====", trim_val))
+
+		local bit8 = (trim_val >> 8) & 0x01
+		local byte_low = trim_val & 0xFF
+
+		local trim_buf = {
+			0x72, --1stP
+			0x10, --2ndP
+			0x10, --3rdP
+			0x10, --4thP
+			0x20, --5thP
+			0x10, --6thP
+			0x10, --7thP
+			0x25, --8thP
+			0x0A, --9thP
+			0x0A, --10thP
+			0x03, --11thP
+			0x11, --12thP
+			0x20, --13thP
+			bit8, --14thP  PBIAS_IPXL_TRIM[8]
+			byte_low, --15thP  PBIAS_IPXL_TRIM[7:0]
+			0x08, --16thP
+			0x08, --17thP
+			0x10, --18thP
+			0x00, --19thP
+			0x00, --20thP
+			0x00, --21thP
+			0x00, --22thP
+			0x00, --23thP
+			0x00, --24thP
+			0x20, --25thP
+			0x20, --26thP
+			0x20, --27thP
+			0x20, --28thP
+			0x88, --29thP
+			0x02, --30thP
+			0x00, --31thP
+			0x02, --32thP
+			0x00, --33thp
+			0x00 --34thp
+		}
+
+		IIC_W_Tab2(0xF8, trim_buf) --Trim
+		--TIME.DELAY(100)
+		TIME.DELAY(50)
+
+		IIC_R_Tab2(0xF8, 34)
+
+
+		local refVolt, measCurrent = POWER.VOL_CUR(P_SMU2)
+		measCurrent = (measCurrent) / 1000
+		LOG.INFO(string.format("trim=%d  Meas Current = %f uA", trim_val, measCurrent))
+		table.insert(current_table, { trim = trim_val, current = measCurrent })
+
+
+		local diff = math.abs(math.abs(measCurrent) - target_uA)
+		if diff < best_diff then
+			best_diff = diff
+			best_trim = trim_val
+			best_current = measCurrent
+			DAC_calibration_code = trim_val
+			println("[%02d] DAC best current out:%.4fuA", best_trim, best_current)
+		end
+	end
+
+	SMU2(OFF, 0, 0x82)
+	PPMU.CAL_EN(1)
+
+	--F_Save_DAC_CSV()
+	--for i,data in ipairs(current_table) do
+	--local line = string.format("%d,%d,%.4f,\n",i,data.trim,data.current)
+	--Update_DAC_CSV(line)
+	--end
+
+
+	local tim2 = TIME.TICK()
+	LOG.INFO("DAC_Full_range time: " .. string.format("%.3f", (tim2 / 1000 - tim1 / 1000)) .. "seconds")
+	--IIC_W_Tab2(0xFD, {0x00, 0x00, 0x00})
+	LOG.INFO(string.format("[%02d] DAC best current out:%.4fuA", best_trim, best_current))
+	--LOG.INFO(string.format("Best trim code = %d, min diff = %f uA", best_trim, best_diff))
+
+	table.insert(results, best_trim)
+	table.insert(results, best_current)
+	--table.insert(results,notFound)
+	--table.insert(results,leakageCurrent)
+
 	local json_data = cjson.encode(results)
 	LOG.INFO(json_data)
-    println("test_temperature_sensor_thermometer的测试时间：%f S",(TIME.TICK() - tim1)/1000)
-    --datalog_results("TEMP_THERMOMETER", results)
-    return 0,json_data
-    
- end
- 
- function F_28M2_Temp_Read()
-
-	local ret = 1
-	local temp_table = {}
-	local temp = 0
-	local results = {}
-	 --i3c_write(0x00CC, 0x00000000) -- ANLG_CTRL - BG disable = 0
-    
-    local temp_sensors = {0,1} -- VTherm 0 and VTherm 1
-    for _, sensor in ipairs(temp_sensors) do
-	    --i3c_write(0x00CC, 0x00000000)  -- ANLG_CTRL - BG disable = 0
-	    apply_calibrated_bandgap_trim()
-		i3c_write(0x00EC, 0x00000012)  -- DBG_MUX_310 - temp ADC on GPIOs
-	    -- Enable external input via TEMP_TPAD
-	    i3c_write(0x00F0, 0x00000110)  -- - TEMP_SAMP_CTRL - ADC source and TPAD_EN
-	
-	    -- Test all temperature sensors
-	    local adc_source = sensor + 1  -- 0→1（001），1→2（010）
-	    -- Set ADC source to output VTherm on TEMP_TPAD & ADCs
-	    local samp_ctrl = 0x00000110 | (adc_source << 4) 
-	    i3c_write(0x00F0, samp_ctrl)
-	    TIME.DELAY(1) 
-	
-	    -- Start manual sample
-	    local temp_reg = i3c_read(0x00F0, 1)
-	    i3c_write(0x00F0, temp_reg | (1 << 1))
-	    TIME.DELAY(100)
-	
-	    -- Read ADC code and measure voltage
-	    local adc_code = i3c_read(0x0104, 1) & 0x3FF  -- TEMP_ADC_RAW_VAL[9:0]
-	    --local voltage = POWER.VOL_CUR(1)  -- 
-	
-		local temperature = convert_adc_to_temperature(adc_code, sensor)
-		--local temperature = convert_adc_to_temperature_old(adc_code)
-		results[string.format("temp_sensors%d",sensor)] = temperature
-    end
-    TIME.DELAY(100)
-    IIC_W_PEQUIN(0xCC, 0x1) --ANLG_CTRL
-	println("temp_sensors0:%f",results["temp_sensors0"])
-	println("temp_sensors1:%f",results["temp_sensors1"])
-	--datalog_results(results)
-	--LOG.INFO("TEMP = " ..table[1])
-	IIC_W_PEQUIN(0x0, 0x109000) --CLK_CTRL
-	TIME.DELAY(100)
-	
-	temp_table = {results["temp_sensors0"]}
-	
-	return ret, temp_table
+	return 0, json_data
 end
 
---20260122 ADD
---Set_Pixel_Current(3.2,0.0459)
+--[[
+Function: Pixel_Current_DAC_Cal_binary
+Desc: DAC full range calibration. Sweep PBIAS_IPXL_TRIM to find trim code for target 5.2uA pixel current.
+Input: None
+Return:
+    0          : Success status
+    json_data  : Json array [best_trim, best_measured_current(uA)]
+--]]
+--- Calibrates the pixel-current DAC (PBIAS_IPXL_TRIM[8:0], F8h TRIM bytes 14-15)
+-- so the AMON-monitored pixel current hits the 5.2 uA target.
+-- Routes analog mux Y5 to AMON (GPIO6=1, GPIO3=0, GPIO2=1), enables the analog
+-- test path (FDh ANALOGTEST = {0x00, 0x02, 0x94}), then forces constant current
+-- with SMU2 and measures the voltage across R_AMUX (100 kOhm):
+-- I(uA) = Vmeas / 100k * 1e6.
+-- Binary search over the 9-bit trim code (0~511) with per-code result caching,
+-- so no code is measured twice (~11 measurements instead of a full sweep).
+-- If 5.2 uA lies outside the DAC range, the closest end code is kept and a
+-- warning is logged (notFound=1 in the log).
+-- The winning code is left written to F8h and stored in global DAC_calibration_code.
+-- @usage Pixel_Current_DAC_Cal_binary()   -- stores result in DAC_calibration_code
+-- @return number status  Always 0 (out-of-range target is reported in the log only).
+-- @return string json    cjson array [best_trim, best_current_uA].
+-- @see DAC_Full_Range_Calibration, apply_DAC_calibration_code
+function Pixel_Current_DAC_Cal_binary()
+	local R_AMUX_OHM = 100000
+	local TRIM_MIN   = 0
+	local TRIM_MAX   = 511 -- 9-bit trim code
+	local SETTLE_MS  = 450 -- settling time after each trim write
 
-function DI_TRIM(current_uA,DutyCycle)
-	Pixel_Current_uA = current_uA
+	local function make_trim_payload(trim_val)
+	
+		local _,read_data = IIC_R_Tab2(0xF8,34)
+		read_data[14] = (trim_val >> 8) & 0x01
+		read_data[15] = trim_val & 0xFF
+		return read_data
+	end
+	local results = {}
+	local current_table = {}
+	local best_trim = nil
+	local best_diff = math.huge
+	local target_uA = 5.2
+	local best_current = nil
+	local notFound = 0
+	local meas_count = 0
+
 	local tim1 = TIME.TICK()
-	--Set pixel current in uA
-	local result_table = {}
-	local difference_value=current_uA*0.05--目标像素电流上下%5
-	--计算目标值
-		local dataCurrent=0x1FF
-    if Color=="Red" then
-    	dataCurrent=math.floor(current_uA/10*511)
-    else
-    	dataCurrent=math.floor(current_uA/4*511)
-    end
+	PPMU.CAL_EN(0) --5V on
+	Power.ValueSetting.SMU2 = 0
+	SMU2(ON, 1, 0x85) --Constant Current (measure Voltage)
+	TIME.DELAY(1000)
 
-	--Set_DutState(ON)
-    --local dac_ctrl = 0
-    ----local glbl, dac = get_avee_range_settings(voltage_AVEEE1)--GLBL=BIT[5:4]  DAC=BIT[7:6]
-    --local glbl=1
-    --local dac =0
-    --dac_ctrl = dac_ctrl | (DAC_cal_trim_step << 16) -- DAC_CAL = 5 (recommended start)
-    --local LO_C_MODE = (Color == "Red") and 0 or 1
-    --println("LO_C_MODE:%d",LO_C_MODE)
-    
-    --dac_ctrl = dac_ctrl | (LO_C_MODE << 8) -- LO_C_MODE = 0 for red, 1 for G/B
-    --dac_ctrl = dac_ctrl | (glbl << 6) | (dac << 4) -- AVEE range settings
-    --dac_ctrl = dac_ctrl | (1 << 1) -- UPDATE_IMM
-    --dac_ctrl = dac_ctrl | (1 << 0) -- EN
-    --dac_ctrl = dac_ctrl | (1 << 3) 
- 
-    ----dac_ctrl = dac_ctrl | (1 << 2) 
-    ----dac_ctrl = dac_ctrl & ~ (1 << 3) 
-    --i3c_write(0x00D8, dac_ctrl) -- DAC_CTRL
-    --LOG.INFO(string.format("dac_ctrl: 0x%X",dac_ctrl))
-    
-    --bist_mode_swich_EN(2,1)--ALL OFF
-    Sw_by_name("W0.bmp")
-    TIME.DELAY(100)
-	local alloff_CURRENT=Average_current()
-	alloff_CURRENT=alloff_CURRENT/1000
-	dark_CURRENT=alloff_CURRENT  --dark current & cathode_on current
-	
-	i3c_write(0x00CC, 0x00000000) --Disable cathode mode
-	TIME.DELAY(70)
-	local cathode_off_CURRENT=Average_current()
-	cathode_off_CURRENT=cathode_off_CURRENT/1000
-	cathode_off_CURRENT=cathode_off_CURRENT
-	
-	local cathode_delta_CURRENT=dark_CURRENT-cathode_off_CURRENT
-	
-	apply_calibrated_bandgap_trim_test_two(1)--Disable cathode mode ,Enable is required
-	--TIME.DELAY(10)
-	--bist_mode_swich_EN(1,1)
-	Sw_by_name("W255.bmp")
-	Set_Brightness(DutyCycle)
+	-- Y5
+	GPIO6_A_SET(1)
+	GPIO3_A_SET(0)
+	GPIO2_A_SET(1)
+
+	-- FDh ANALOGTEST : soft-reset analog-test MUX before reconfiguring
+	IIC_W_Tab2(0xFD, { 0x00, 0x00, 0x00 })
+	IIC_R_Tab2(0xFD, 3) -- read-back to latch reset state
+
+	TIME.DELAY(10)
+
+	local preVolt = POWER.VOL_CUR(P_SMU2)
+	LOG.INFO(string.format("Preset AMUX Voltage:%f", preVolt))
+
+	-- I2C keys : F0h Level2 key, F1h OTP/eFuse key, FCh 3rd key
+	IIC.WRITE(0x60, { 0xF0 }, { 0x5a, 0x5a }) -- unlock Level2 register bank
+	IIC.WRITE(0x60, { 0xF1 }, { 0x5a, 0x5a }) -- unlock OTP key
+	IIC.WRITE(0x60, { 0xFc }, { 0x5a, 0x5a }) -- unlock 3rd key
+	-- FDh ANALOGTEST : enable analog-test item path to AMON
+	-- 3rd P = 0x94 → VDC_TPXL_EN (analog pixel test enabled) + ANA_TMUX/ANA_TEST_SET
+	IIC_W_Tab2(0xFD, { 0x00, 0x02, 0x94 })
+
 	TIME.DELAY(100)
-	local allon_CURRENT=Average_current()
-	allon_CURRENT=allon_CURRENT/1000
-	
-	local pixel_current_init=allon_CURRENT/(576*768*DutyCycle)
-	LOG.INFO(string.format("pixel_current_init:%.3f",math.abs(pixel_current_init)))
-	
-	local read_data_DC=IIC_R_PEQUIN(0xDC) --DAC_WORD
-    local register_value,pixel_current,iter= calculate_Dichotomy(dark_CURRENT,current_uA,difference_value,dataCurrent,DutyCycle)
-	LOG.INFO(string.format("iter:%.3f",math.abs(iter)))
-	--local read_data1 = IIC_R_PEQUIN(0xDC)
-    --LOG.INFO(string.format("DATA:0x%X",read_data1))
 
-	local allon_trim_CURRENT=Average_current()
-	allon_trim_CURRENT=allon_trim_CURRENT/1000
+	----------------------------------------------------------------
+	-- Measure |current| (uA) at one trim code. Results are cached,
+	-- so no code is ever measured twice. Also tracks the best code.
+	----------------------------------------------------------------
+	local cache = {}
+	local function measure(trim_val)
+		if cache[trim_val] ~= nil then
+			return cache[trim_val]
+		end
+		-- F8h TRIM : PBIAS_IPXL_TRIM[8:0] at bytes 14-15 (set pixel-current DAC code)
+		IIC_W_Tab2(0xF8, make_trim_payload(trim_val))
+		TIME.DELAY(SETTLE_MS)
+		--IIC_R_Tab2(0xF8, 34)
+		local measVolt, forceCur = POWER.VOL_CUR(P_SMU2) -- V nA
+		local measCurrent = measVolt / R_AMUX_OHM * 1e6
+		meas_count = meas_count + 1
+		LOG.INFO(string.format("[#%02d] trim=%d AMUX=%.4fV Current=%.4f uA, forceCur=%.4f",
+			meas_count, trim_val, measVolt, measCurrent, forceCur))
+		table.insert(current_table, { trim = trim_val, current = measCurrent })
 
-	--AVEE_V=POWER.VOL_CUR(P_AVEE)*1000
-	DI_trim_code=register_value--全局缓存
-    DAC_word_value=register_value
-	LOG.INFO(string.format("Dregister_valueI_trim_code:0x%X",DI_trim_code))
-    table.insert(result_table,dark_CURRENT)--IDLE-CATHODE-ON
-    
-	LOG.INFO(string.format("dark_CURRENT:%f",dark_CURRENT))
-	table.insert(result_table,cathode_off_CURRENT)--IDLE-CATHODE-OFF Disable cathode mode
-	
-	LOG.INFO(string.format("cathode_off_CURRENT:%f",cathode_off_CURRENT))
-	table.insert(result_table,cathode_delta_CURRENT)--IDLE-CATHODE-DELTA dark_CURRENT-cathode_off_CURRENT
-	
-	LOG.INFO(string.format("cathode_delta_CURRENT:%f",cathode_delta_CURRENT))
-	table.insert(result_table,alloff_CURRENT)--ALLOFF bist_mode 2
-	
-	LOG.INFO(string.format("alloff_CURRENT:%f",alloff_CURRENT))
-	table.insert(result_table,allon_CURRENT)--ALLON-INIT 校准前 bist_mode 1
-	
-	LOG.INFO(string.format("allon_CURRENT:%f",allon_CURRENT))
-	table.insert(result_table,math.abs(pixel_current_init))--PIXELCURRENT-INIT 校准前 pixel_current
-	
-	LOG.INFO(string.format("pixel_current_init:%f",pixel_current_init))
-	table.insert(result_table,read_data_DC)--DACWORD-INIT 校准前DAC_WORD
-	
-	LOG.INFO(string.format("read_data_DC:%f",read_data_DC))
-	table.insert(result_table,allon_trim_CURRENT)--ALLON-TRIM 校准后 bist_mode 1
-	
-	LOG.INFO(string.format("allon_trim_CURRENT:%f",allon_trim_CURRENT))
-	table.insert(result_table,pixel_current)--PIXELCURRENT-TRIM 校准后 pixel_current
-	
-	LOG.INFO(string.format("pixel_current:%f",pixel_current))
-	table.insert(result_table,register_value)--DACWORD-TRIM 校准后DAC_WORD
-	
-	LOG.INFO(string.format("register_value:%f",register_value))
-	table.insert(result_table,iter)--LOOPSTEPCNT 调节次数
-	
-	LOG.INFO(string.format("iter:%f",iter))
-	--Set_DutState(OFF)
-	local json_data = cjson.encode(result_table)
+		local diff = math.abs(math.abs(measCurrent) - target_uA)
+		if diff < best_diff then
+			best_diff = diff
+			best_trim = trim_val
+			best_current = measCurrent
+			LOG.DEBUG(string.format("[%02d] DAC best current out: %.4fuA", best_trim, best_current))
+		end
+
+		cache[trim_val] = math.abs(measCurrent)
+		return cache[trim_val]
+	end
+
+	----------------------------------------------------------------
+	-- Binary search, step size 1.
+	-- 1) Measure both ends to learn slope direction and check that
+	--    the target is inside the DAC range.
+	-- 2) Bisect until lo/hi are adjacent codes bracketing the target.
+	-- 3) best_trim = whichever measured code is closest (tracked in
+	--    measure()).
+	-- Total: 2 + ceil(log2(511)) = ~11 measurements (was 52).
+	----------------------------------------------------------------
+	local lo, hi = TRIM_MIN, TRIM_MAX
+	local i_lo = measure(lo)
+	local i_hi = measure(hi)
+	local increasing = (i_hi >= i_lo)
+
+	local i_min = math.min(i_lo, i_hi)
+	local i_max = math.max(i_lo, i_hi)
+	if target_uA < i_min or target_uA > i_max then
+		-- Target outside DAC range: best_trim is already the closest end code
+		notFound = 1
+		LOG.ERROR(string.format("WARNING: target %.3fuA outside DAC range [%.4f, %.4f]uA",
+			target_uA, i_min, i_max))
+	else
+		while (hi - lo) > 1 do
+			local mid = (lo + hi) // 2
+			local above = (measure(mid) >= target_uA)
+			-- increasing slope: above target -> answer is at/below mid
+			-- decreasing slope: above target -> answer is above mid
+			if above == increasing then
+				hi = mid
+			else
+				lo = mid
+			end
+		end
+	end
+
+	DAC_calibration_code = best_trim
+	-- F8h TRIM : write final winning PBIAS_IPXL_TRIM code
+	IIC_W_Tab2(0xF8, make_trim_payload(best_trim))
+	TIME.DELAY(50)
+	IIC_R_Tab2(0xF8, 34) -- read-back to confirm trim latched
+
+	SMU2(OFF, 0, 0x82)
+	PPMU.CAL_EN(1)
+
+	local tim2 = TIME.TICK()
+	LOG.INFO("DAC_BinarySearch time: " ..
+		string.format("%.3f", (tim2 / 1000 - tim1 / 1000)) .. "seconds, measurements=" .. meas_count)
+	LOG.INFO(string.format("[%02d] DAC best current out:%.4fuA (diff=%.4fuA, notFound=%d)", best_trim, best_current,
+		best_diff, notFound))
+
+	table.insert(results, best_trim)
+	table.insert(results, best_current)
+	--table.insert(results,notFound)
+
+	local json_data = cjson.encode(results)
 	LOG.INFO(json_data)
 	return 0, json_data
-    
 end
 
---Set_Pixel_Current(1,0.0459)
-function Set_Pixel_Current(current_uA)
-	local result_table = {}
-	--Set pixel current in uA
+--[[
+Function: DAC_2point_calibration
+Desc: DAC two-point calibration. Fix PBIAS_IPXL_TRIM, measure pixel current at GLBC=43 and GLBC=341, calculate linear coefficient I=k*GLBC+b, judge +/-5% spec.
+Input: None
+Return:
+    0          : Function complete status
+    json_data  : Json array [current@GLBC43(uA), current@GLBC341(uA)]
+--]]
+function DAC_2point_calibration()
+	----------------------------------------------------------------
+	-- 1. Constants
+	----------------------------------------------------------------
+	local CODE_A       = 43 -- GLBC code, V0.4 Pass/Fail 10
+	local CODE_B       = 341 -- GLBC code, V0.4 Pass/Fail 11
+	local CODE_MAX     = 511
 
-     --current_nA_at_DACWordpointA = EFuse_bits_read(0x110,12,0)*5/2 -- current at DAC word A (43)
-     --current_nA_at_DACWordpointB = EFuse_bits_read(0x11C,12,4)*5/2 -- current at DAC word B (341)
-    
-    --variables for current at DACWordpoint A and B MUST be replaced with calibration data read from eFuse
-	if TEST_MODE=="MT" then
-		local dacpoint=DAC_WordpointA_B_Measurement_pixel()
-	    current_nA_at_DACWordpointA = math.abs(dacpoint[1])
-	    current_nA_at_DACWordpointB = math.abs(dacpoint[2])
+	local IPXL_TOL_PCT = 5 -- V0.4 criteria 10 / 11: +/-5% each
 
-	elseif TEST_MODE=="CP2" then
-	    current_nA_at_DACWordpointA = DAC_POINTA_CODE/2 
-	    current_nA_at_DACWordpointB = DAC_POINTB_CODE/2
+	-- *** PENDING META CONFIRMATION ***
+	-- V0.4 only says "+/-5% of expected value" and never states the expected
+	-- value anywhere. The two numbers below are derived from the p.23 data
+	-- points GLBC=146 -> 3.0uA and GLBC=156 -> 3.2uA, which give the nominal
+	-- line I(uA) = 0.02 * GLBC + 0.08. They are NOT quoted in the test plan.
+	-- Replace directly once the official values are available.
+	local EXPECT_A_uA  = 0.94 -- Code 43
+	local EXPECT_B_uA  = 6.90 -- Code 341
+
+	local SETTLE_MS    = 300
+	local SMU_RANGE    = 0x02 -- auto range, matches the working Full Range
+	local CUR_SIGN     = -1 -- SMU2 reads negative (sink); flip to compare
+
+	-- PBIAS_IPXL_TRIM is held for the whole test and must not change
+	local PBIAS        = pbias_trim or PBIAS_IPXL_code or 256
+
+	local results      = {}
+	PPMU.CAL_EN(0)
+
+	LOG.INFO(string.format("===== DAC 2-Point : GLBC %d / %d, PBIAS_IPXL_TRIM fixed %d =====",
+		CODE_A, CODE_B, PBIAS))
+
+	----------------------------------------------------------------
+	-- 2. Local helpers
+	----------------------------------------------------------------
+	-- F8h 34-byte payload; only bytes 14/15 carry PBIAS_IPXL_TRIM
+	local function make_trim_payload(trim_val)
+		local bit8     = (trim_val >> 8) & 0x01
+		local byte_low = trim_val & 0xFF
+		return {
+			0x72, --1stP   OSC_FTRIM
+			0x10, --2ndP   VDC_VDDPHY_TRIM
+			0x10, --3rdP   VDC_VDDLP_TRIM
+			0x10, --4thP   VDC_VDDPLL_TRIM
+			0x20, --5thP   VDC_VREF_TRIM
+			0x10, --6thP   VDC_VDDA_TRIM
+			0x10, --7thP   VDC_VDDPXL_TRIM
+			0x25, --8thP   VDC_VEEA1P6_TRIM
+			0x0A, --9thP   VDC_VEEA1P2_TRIM
+			0x0A, --10thP  VDC_VEEA1_TRIM
+			0x03, --11thP  VDC_BGR_IBIAS / VDC_MAIN_IBIAS
+			0x11, --12thP  VDC_VT_IBIAS / VDC_LDO_IBIAS
+			0x20, --13thP  VDC_IREF_TRIM
+			bit8, --14thP  PBIAS_IPXL_TRIM[8]
+			byte_low, --15thP  PBIAS_IPXL_TRIM[7:0]
+			0x08, --16thP  PHY_TERM50_TRIM   must match Full Range exactly
+			0x08, --17thP  PHY_TERM80_TRIM
+			0x10, --18thP  PHY_BIAS_TRIM
+			0x00, --19thP  PHY_OCALAP
+			0x00, --20thP  PHY_OCALAN
+			0x00, --21thP  PHY_OCALBP
+			0x00, --22thP  PHY_OCALBN
+			0x00, --23thP  PHY_OCALCP
+			0x00, --24thP  PHY_OCALCN
+			0x20, --25thP  TSL_TOP_TRIM
+			0x20, --26thP  TSR_TOP_TRIM
+			0x20, --27thP  TSL_BOT_TRIM
+			0x20, --28thP  TSR_BOT_TRIM
+			0x88, --29thP  TSR_BGR_TRIM / TSL_BGR_TRIM
+			0x02, --30thP  TSL_TRIM_TARGET[9:8]
+			0x00, --31thP  TSL_TRIM_TARGET[7:0]
+			0x02, --32thP  TSR_TRIM_TARGET[9:8]
+			0x00, --33thP  TSR_TRIM_TARGET[7:0]
+			0x00 --34thP  TRIM_DUM1
+		}
 	end
-	if IS_DEBUG=="TRUE" then
-	    current_nA_at_DACWordpointA = (156*5)/2 
-	    current_nA_at_DACWordpointB = (1246*5)/2
-	end
-	LOG.DEBUG(string.format("pointA:%f,pointB:%f",current_nA_at_DACWordpointA,current_nA_at_DACWordpointB))
-    DACWordpointA = 43
-    DACWordpointB = 341
-    
-    current_gain = (current_nA_at_DACWordpointB - current_nA_at_DACWordpointA) / (DACWordpointB - DACWordpointA)
-    LOG.INFO(string.format("k:%0.4f",current_gain))
-    current_offset = (current_nA_at_DACWordpointA - (current_gain * DACWordpointA))
-    LOG.INFO(current_offset)
-     LOG.INFO(string.format("b:%0.4f",current_offset))
-    target_current_nA = current_uA * 1000
-    DAC_value_for_target_current = (target_current_nA - current_offset) / current_gain
-    LOG.INFO(DAC_value_for_target_current)
-    
-    if DAC_value_for_target_current < 0 or DAC_value_for_target_current > 511 then
-        LOG.ERROR("DAC_value_for_target_current is out of range: " .. tostring(DAC_value_for_target_current))
-        return
-    end
-    dataCurrent = math.tointeger(math.floor(DAC_value_for_target_current)) & 0xFFFFFFFF 
-    LOG.INFO(string.format("Set_Pixel_Current : %f Frame value is : 0x%x", target_current_nA, dataCurrent))
-    LOG.INFO(string.format("DAC:%04x",dataCurrent))
-    
-    
-    if Color == "Red" then
-    	dataCurrent = math.tointeger(dataCurrent)
-    end
-    
-    
-    IIC_W_PEQUIN(0xDC, dataCurrent)  -- Write the DAC word
-    DAC_word_value=dataCurrent
-	--table.insert(result_table,Power.ValueSetting.AVEE1)--
-	--table.insert(result_table,dataCurrent)--DACWORD-TRIM 校准后DAC_WORD
 
-	--local json_data = cjson.encode(result_table)
-	--LOG.INFO(json_data)
-	return 0, dataCurrent
+	-- F6h VDC GLBC: 3 parameters
+	local function set_glbc(code)
+		IIC_W_Tab2(0xF6, { 0x00, (code >> 8) & 0x01, code & 0xFF })
+		IIC_W_Tab2(0xF4, { 0x01 }) -- Update, per IC.lua:212 / _debug2.lua:35
+	end
+
+	----------------------------------------------------------------
+	-- 3. Power up and measurement path
+	--    (sequence matches the Full Range function that is known to work)
+	----------------------------------------------------------------
+	GPIO6_A_SET(1)                      -- PG_GPIO5 -> X_CBIT3 = 1
+	GPIO3_A_SET(0)                      -- PG_GPIO2 -> X_CBIT2 = 0
+	GPIO2_A_SET(1)                      -- PG_GPIO1 -> X_CBIT1 = 1   -> U3 Y5 = AMON
+
+	IIC_W_Tab2(0xFD, { 0x00, 0x00, 0x00 }) -- clear FDh first
+	IIC_R_Tab2(0xFD, 3)
+
+	-- Do NOT switch 5V off: the CBIT relay coils (K11/K12) run on 5V_A
+	--PPMU.CAL_EN(1)    --5V off
+	TIME.DELAY(10)
+
+	Power.ValueSetting.SMU2 = 0
+	SMU2(ON, 0, SMU_RANGE)
+	TIME.DELAY(1000)
+
+	local Vol, leakageCurrent = POWER.VOL_CUR(P_SMU2)
+	LOG.INFO(string.format("Pre-set (leakage) Current: %f nA", leakageCurrent))
+
+	IIC.WRITE(0x60, { 0xF0 }, { 0x5a, 0x5a }) -- Level2 Key
+	IIC.WRITE(0x60, { 0xF1 }, { 0x5a, 0x5a }) -- OTP Key
+	IIC.WRITE(0x60, { 0xFc }, { 0x5a, 0x5a }) -- third key
+
+	-- FDh per the test plan's s25m11_otp_ipxl_0420().
+	-- Measured: 0x02 and 0x12 behave identically here.
+	IIC_W_Tab2(0xFD, { 0x00, 0x02, 0x94 })
+	TIME.DELAY(100)
+
+	-- Write PBIAS_IPXL_TRIM once and hold it. Equivalent to the Pequin step
+	-- "Apply calibrated trim value to bandgap".
+	IIC_W_Tab2(0xF8, make_trim_payload(PBIAS))
+	TIME.DELAY(SETTLE_MS)
+
+	----------------------------------------------------------------
+	-- 4. Measure: only GLBC changes
+	----------------------------------------------------------------
+	local function measure_at_glbc(code, tag)
+		set_glbc(code)
+		TIME.DELAY(SETTLE_MS)
+		local refVolt, measCurrent = POWER.VOL_CUR(P_SMU2)
+		local cur_uA = CUR_SIGN * (measCurrent - leakageCurrent) / 1000
+		LOG.INFO(string.format("%s GLBC=%3d  I = %.4f uA", tag, code, cur_uA))
+		return cur_uA
+	end
+
+	local curA_uA = measure_at_glbc(CODE_A, "[point A]")
+	local curB_uA = measure_at_glbc(CODE_B, "[point B]")
+
+	-- Read F6h back to confirm the GLBC write landed (3 bytes)
+	IIC_R_Tab2(0xF6, 3)
+
+	----------------------------------------------------------------
+	-- 5. Tear down
+	----------------------------------------------------------------
+	SMU2(OFF, 0, SMU_RANGE)
+	GPIO2_A_SET(0)
+	GPIO3_A_SET(0)
+	GPIO6_A_SET(0)
+
+	----------------------------------------------------------------
+	-- 6. Solve I = k * GLBC + b
+	----------------------------------------------------------------
+	local k_uA = (curB_uA - curA_uA) / (CODE_B - CODE_A)
+	local b_uA = curA_uA - k_uA * CODE_A
+	local fs_uA = k_uA * CODE_MAX + b_uA
+
+	LOG.INFO(string.format("k = %.2f nA/code, b = %.1f nA, full scale @%d = %.3f uA",
+		k_uA * 1000, b_uA * 1000, CODE_MAX, fs_uA))
+
+	-- Sanity check on the ratio of the two points. Expected 6.90/0.94 = 7.34.
+	-- A ratio near 1 means the GLBC write had no effect, or GLBC is not on
+	-- this monitor path; k / b / Pass-Fail below would all be meaningless.
+	local ratio = (curA_uA ~= 0) and (curB_uA / curA_uA) or 0
+	LOG.INFO(string.format("Sanity: I(341)/I(43) = %.2f  (expect ~7.34)", ratio))
+	if math.abs(ratio - 1) < 0.2 then
+		LOG.ERROR("2Point sanity FAIL: two points nearly identical -> GLBC write not effective")
+	end
+
+	----------------------------------------------------------------
+	-- 7. Pass / Fail (V0.4 criteria 10 / 11)
+	----------------------------------------------------------------
+	local tolA_uA = EXPECT_A_uA * IPXL_TOL_PCT / 100
+	local tolB_uA = EXPECT_B_uA * IPXL_TOL_PCT / 100
+
+	local passA = (math.abs(curA_uA - EXPECT_A_uA) <= tolA_uA) and 1 or 0
+	local passB = (math.abs(curB_uA - EXPECT_B_uA) <= tolB_uA) and 1 or 0
+
+	LOG.INFO(string.format("Point A: %.4f uA  expect %.3f +/- %.3f  -> %s",
+		curA_uA, EXPECT_A_uA, tolA_uA, (passA == 1) and "PASS" or "FAIL"))
+	LOG.INFO(string.format("Point B: %.4f uA  expect %.3f +/- %.3f  -> %s",
+		curB_uA, EXPECT_B_uA, tolB_uA, (passB == 1) and "PASS" or "FAIL"))
+
+	if passA == 0 then LOG.ERROR("2Point criteria 10: current at Code 43 out of +/-5%") end
+	if passB == 0 then LOG.ERROR("2Point criteria 11: current at Code 341 out of +/-5%") end
+
+	-- Criterion 12 "Linearity error exceeds specification": not judged.
+	--   (a) V0.4 gives no number; the "specification" is blank
+	--   (b) Two points cannot yield an INL figure - any two points define a
+	--       perfect straight line, so the residual is always zero
+	--   k / b are still computed and datalogged; add a verdict once the
+	--   design team supplies a limit.
+	LOG.INFO("Criteria 12 (linearity): no spec value given, not judged. k/b datalogged only.")
+
+	----------------------------------------------------------------
+	-- 8. Cache globals for eFuse and downstream back-calculation
+	----------------------------------------------------------------
+	IPXL_2P_POINTA_nA = curA_uA * 1000
+	IPXL_2P_POINTB_nA = curB_uA * 1000
+	IPXL_2P_K_nA      = k_uA * 1000
+	IPXL_2P_B_nA      = b_uA * 1000
+	IPXL_2P_PBIAS     = PBIAS
+
+	----------------------------------------------------------------
+	-- 9. Datalog
+	--    RESULT ORDER:
+	--      [1] PBIAS_IPXL_TRIM used
+	--      [2] I @ GLBC 43   (uA)   <-- to be eFused
+	--      [3] I @ GLBC 341  (uA)   <-- to be eFused
+	--      [4] k             (nA/code)
+	--      [5] b             (nA)
+	--      [6] Pass Point A  (1/0)
+	--      [7] Pass Point B  (1/0)
+	----------------------------------------------------------------
+	--table.insert(results, PBIAS)
+	table.insert(results, curA_uA)
+	table.insert(results, curB_uA)
+	--table.insert(results, k_uA * 1000)
+	--table.insert(results, b_uA * 1000)
+	--table.insert(results, passA)
+	--table.insert(results, passB)
+
+	local json_data = cjson.encode(results)
+	LOG.INFO(json_data)
+
+	-- Existing convention returns 0 unconditionally. If the harness treats
+	-- non-zero as fail, use:
+	--   return (passA==1 and passB==1) and 0 or 1, json_data
+	return 0, json_data
 end
 
-function Set_Duty_Cycle(duty_cycle_percent)
+--[[
+Function: Temperature_Sensor_Thermometer
+Desc: Chip internal temperature sensor read function. Unlock register, configure left(TSL)/right(TSR) temperature sensor, read raw ADC code and convert to temperature.
+Input: None
+Return:
+    0          : Function complete status
+    json_data  : Json array [LeftTemp(℃), RightTemp(℃), TSL_RAW_CODE, TSR_RAW_CODE]
+--]]
+function Temperature_Sensor_Thermometer()
+	local results = {}
+	IIC.WRITE(0x60, { 0xF0 }, { 0x5a, 0x5a }) -- Level2 Key
+	IIC.WRITE(0x60, { 0xF1 }, { 0x5a, 0x5a }) -- OTP Key
+	IIC.WRITE(0x60, { 0xFc }, { 0x5a, 0x5a }) -- third key
+
+	--IIC_W_Tab2(0xFE, {0x02, 0x03})
+
+	-- 温度控制寄存器配置
+	IIC_W_Tab2(0xE0,
+		{ 0x30, 0x82, 0x00, 0x40, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0xCF, 0x30, 0x82, 0x00, 0x41, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0x1F }) --Temperature Control
+	IIC_W_Tab2(0xE0,
+		{ 0x78, 0x82, 0x00, 0x40, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0xCF, 0x78, 0x82, 0x00, 0x41, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0x1F }) --Temperature Control
+	IIC_W_Tab2(0xE0,
+		{ 0x70, 0x82, 0x00, 0x40, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0xCF, 0x70, 0x82, 0x00, 0x41, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0x1F }) --Temperature Control
+	--IIC_W_Tab2(0xE0,0x70)
+
+	--Temperature_TRIM_buf[30]  = 0x1
+	--Temperature_TRIM_buf[31]  = 0x55
+	--Temperature_TRIM_buf[32]  = 0x1
+	--Temperature_TRIM_buf[33]  = 0x55
+	--IIC_W_Tab2(0xF8,Temperature_TRIM_buf)
+	--IIC_R_Tab2(0xF8, 34)
+
+	TIME.DELAY(50)
+	local _, readData = IIC_R_Tab2(0xE1, 4)
+	-- rData[1] → 1st P: TSL_DATA_OUT[9:8]
+	-- rData[2] → 2nd P: TSL_DATA_OUT[7:0]
+	-- rData[3] → 3rd P: TSR_DATA_OUT[9:8]
+	-- rData[4] → 4th P: TSR_DATA_OUT[7:0]
+	local tsl_high    = readData[1] & 0x03 -- 低2bit
+	local tsl_low     = readData[2] & 0xFF
+	local TSL_CODE    = (tsl_high << 8) | tsl_low
+
+	local tsr_high    = readData[3] & 0x03 -- 低2bit
+	local tsr_low     = readData[4] & 0xFF
+	local TSR_CODE    = (tsr_high << 8) | tsr_low
+
+
+	local function Code2Temp(code)
+		-- 292(-25℃) ~ 732(85℃)
+		if code < 292 or code > 732 then
+			return nil
+		end
+		return -25 + (code - 292) * 0.25
+	end
+
+	local tempLeft = Code2Temp(TSL_CODE)
+	local tempRight = Code2Temp(TSR_CODE)
+
+	LOG.INFO(string.format("TSL_CODE = %d, Left Temp = %s ℃", TSL_CODE, tostring(tempLeft or "OutRange")))
+	LOG.INFO(string.format("TSR_CODE = %d, Right Tmp = %s ℃", TSR_CODE, tostring(tempRight or "OutRange")))
+
+
+	table.insert(results, tempLeft)
+	table.insert(results, tempRight)
+	table.insert(results, TSL_CODE)
+	table.insert(results, TSR_CODE)
+
+
+	local json_data = cjson.encode(results)
+	LOG.INFO(json_data)
+	return 0, json_data
+end
+
+--Set_Brightness(100)
+function Set_Brightness(glbc_value)
+	local results = {}
+	IIC.WRITE(0x60, { 0xF0 }, { 0x5a, 0x5a }) -- Level2 Key
+	IIC.WRITE(0x60, { 0xF1 }, { 0x5a, 0x5a }) -- OTP Key
+	IIC.WRITE(0x60, { 0xFc }, { 0x5a, 0x5a }) -- third key
+
+	--IIC_W_Tab2(0xF6, {0x00, 0x01 ,0xFF}) -- Pixel current to max
+	--IIC_R_Tab2(0xF6,3)
+
+	--IIC_W_Tab2(0xFA, {0x91, 0x00, 0x00, 0x10,0x00,0x80,0x00,0x80,0x00})
+	--IIC_W_Tab2(0xFA, {0x91, 0xFF, 0x00, 0x10,0x00,0x80,0x00,0x80,0x00})
+
+	local bit8   = (glbc_value >> 8) & 0x01
+	local bit7_0 = glbc_value & 0xFF
+
+	LOG.INFO(string.format("bit8 val:0x%X, bbit7_0 val:0x%X", bit8, bit7_0))
+	IIC_W_Tab2(0xF6, { 0x00, bit8, bit7_0 })
+
+	IIC_R_Tab2(0xF6, 3)
+	return 0
+end
+
+function F_CLK_IN_TEST()
+	--MCU.CHANNEL_LEVEL(2,1,1.80)--gpio 1.8V
+	PPMU.PIXEL_IN(1) --CLK_OUT EN
+	--PPMU.RELAY_EN(0x200)
+	--PPMU.CAL_EN(0)
+	--Pre_Clk=Real_Clk1
+	local Real_Clk1 = DEDP.GET_FRQ(1) / 1000000
+	local Real_Clk2 = DEDP.GET_FRQ(2) / 1000000
+
+
+	local real1 = Real_Clk1 * 2
+	local real2 = Real_Clk2 * 8
+
+	LOG.DEBUG(string.format("CLK_MEASURE: ch1_real=%.3fMHZ, ch2_real=%3fMHZ", real1, real2))
+
+	return real1
+
+	--if (isInRange(Pre_Clk, Real_Clk1*2, 0.1)) then
+	--LOG.DEBUG(string.format("CLK_IN1_TEST-->PASS,CLK_OUT-->%.3fMHZ CLK_IN-->%.3fMHZ",Pre_Clk,Real_Clk1*2))
+	--else
+	--LOG.ERROR(string.format("CLK_IN1_TEST-->NG,CLK_OUT-->%.3fMHZ CLK_IN-->%.3fMHZ",Pre_Clk,Real_Clk1*2))
+	--end
+
+	--if (isInRange(Pre_Clk, Real_Clk2*8, 0.1)) then
+	--LOG.DEBUG(string.format("CLK_IN2_TEST-->PASS,CLK_OUT-->%.3fMHZ CLK_IN-->%.3fMHZ",Pre_Clk,Real_Clk2*8))
+	--else
+	--LOG.ERROR(string.format("CLK_IN2_TEST-->NG,CLK_OUT-->%.3fMHZ CLK_IN-->%.3fMHZ",Pre_Clk,Real_Clk2*8))
+	--end
+	--DEDP.SI5351_SET(64*1000*1000,5)--64M
+	--return meas_freq_mhz
+end
+
+--[[
+Function: Internal_Osc_trim
+Desc: Internal oscillator trim calibration. Sweep OSC_FTRIM code, measure clock frequency, find the trim value closest to target 12.5MHz, then verify and judge PASS/FAIL.
+Input: None
+Return:
+    0          : Function complete status
+    json_data  : Json array [target_freq(MHz), best_osc_ftrim, best_meas_freq(MHz), final_verify_freq(MHz)]
+--]]
+function Internal_Osc_trim()
+	local json_data = {}
+	local results = {}
+	local pass_fail_str
+
+	local target_frequency = 12.5 -- Unit: MHz
+	local freq_low_limit = 12.375
+	local freq_high_limit = 12.625
+	--local target_frequency = 386  -- Unit: MHz
+	--local freq_low_limit = 381
+	--local freq_high_limit = 391
+	local best_frequency = 0
+	local best_osc_ftrim = 0
+	local min_diff = math.huge
+	local pre_default_freq = 0
+
+	--PPMU.CAL_EN(1)    --5V on
+	--IIC_W_Tab2(0xFE, {0x1A, 0x00})
+	IIC_W_Tab2(0xFE, { 0x1A, 0x00 }) --LOGICPTEST
+	--IIC_W_Tab2(0xFE, {0x08, 0x00})
+	--IIC_W_Tab2(0xFF, {0x03, 0x00})
+	IIC_W_Tab2(0xFF, { 0x03, 0x02 }) --EDSTEST
+	--IIC_R_Tab2(0xFF, 2)
+	--IIC_R_Tab2(0xFE, 2)
+	IIC_W_Tab2(0xF8, { 0x80, 0x10, 0x10, 0x10, 0x20, 0x10, 0x10, 0x25 })
+
+
+	TIME.DELAY(200)
+	pre_default_freq = F_CLK_IN_TEST()
+	LOG.DEBUG(string.format("pre_default_fpreq = %.5f", pre_default_freq))
+
+	for osc_ftrim = 0, 0x32 do
+		--reg_0xF8[1] = osc_ftrim
+		IIC_W_Tab2(0xF8, { osc_ftrim, 0x10, 0x10, 0x10, 0x20, 0x10, 0x10, 0x25 })
+
+		TIME.DELAY(200)
+		IIC_R_Tab2(0xF8, 8)
+
+		local measured_freq = F_CLK_IN_TEST()
+		LOG.DEBUG(string.format("===OSC_TRIM = %d,measured_freq = %.5f", osc_ftrim, measured_freq))
+		local diff = math.abs(measured_freq - target_frequency)
+		if diff < min_diff then
+			min_diff = diff
+			best_frequency = measured_freq
+			best_osc_ftrim = osc_ftrim
+		end
+	end
+	LOG.DEBUG(string.format("***best_trim: %d, bset_fre: %.5f", best_osc_ftrim, best_frequency))
+
+	-- Step9: Identify the trim code that produces the closest match to 12.5 MHz
+	-- Step10: Write optimal trim code to register
+	--IIC_W_Tab2(0xF8, best_osc_ftrim)
+	TIME.DELAY(50)
+
+	local final_verify_freq = F_CLK_IN_TEST()
+
+	if final_verify_freq >= freq_low_limit and final_verify_freq <= freq_high_limit and best_osc_ftrim >= 0 and best_osc_ftrim <= 0xFF then
+		pass_fail_str = "PASS"
+	else
+		pass_fail_str = "FAIL"
+	end
+
+	--table.insert(results, pass_fail_str)
+	table.insert(results, target_frequency)
+	--table.insert(results, pre_default_freq)
+	table.insert(results, best_osc_ftrim)
+	table.insert(results, best_frequency)
+	table.insert(results, final_verify_freq)
+
+	local json_data = cjson.encode(results)
+	LOG.INFO(json_data)
+
+	return 0, json_data
+end
+
+function ConvertTo10BitBinary(num)
+	-- 范围0 ~7.9921875
+	if num < 0 then num = 0 end
+	if num >= 8 then num = 7.9921875 end
+
+	local raw_int = math.floor(num * 128)
+	local bin_str = ""
+
+	-- 从bit9循环到bit0
+	for i = 9, 0, -1 do
+		local bit = math.floor(raw_int / (2 ^ i)) % 2
+		bin_str = bin_str .. tostring(bit)
+		--3bit整数结束，i==7，插入小数点
+		if i == 7 then
+			bin_str = bin_str .. "."
+		end
+	end
+	return bin_str, raw_int
+end
+
+function Bandgap_Trim()
 	local tim1 = TIME.TICK()
-	--Set duty cycle for gray 255
+	local target_voltage = 1.227
+	local best_trim = 0
+	local best_voltage = 0
+	local results = {}
 	local result_table = {}
-	frame_rate = 90  --Should be read from Pequin or defined elsewhere in Lua config
-	ref_clock = 50000000  --Should be measured from Pequin or defined elsewhere in Lua config
 
-	clock_cycles_per_frame = ref_clock/frame_rate-------------555,555.5555555556
-	Rsync = clock_cycles_per_frame/768---------723.3796296296297
-	LUT_val =math.floor( duty_cycle_percent*clock_cycles_per_frame/255)-------65,359.47712418301
-	LOG.INFO(string.format('LUT_val: %f',LUT_val))
-	data_LUT_val = math.tointeger(math.floor(LUT_val)) & 0xFFFFFFFF ------65359   0x0000FFCF
-	LOG.INFO(string.format('LUT_val register value: 0x%x',data_LUT_val))
-	
-	--Set LUT value
-	IIC_W_PEQUIN(0x18, 0xC9) --LUT_WR_CTRL
-	IIC_W_PEQUIN(0x68, 0x1) --PAI_SETUP
-	IIC_W_PEQUIN(0x60, 0x80) --PAI_LUT_XB_CTRL
-	IIC_W_PEQUIN(0x8000,data_LUT_val) -- Set LUT value
-	IIC_W_PEQUIN(0x18, 0xC0) --LUT_WR_CTRL
-	LUT_val=data_LUT_val
-	--Set the R_sync delay
-	R_sync = clock_cycles_per_frame/768-----723.3796296296297
-	R_sync_interval = math.tointeger(math.floor(Rsync))-------723
-	local RSYNC_NUM_VALUE = 0x300 << 16  -- Setting RSYNC_NUM to 768 (0x300)-------0x3000000，49152000
-	local RSYNC_INT_VALUE = R_sync_interval & 0xFFF -- Masking interval to 12 bits------723
-	local data_RSYNC_CFG = RSYNC_NUM_VALUE | RSYNC_INT_VALUE
-	LOG.INFO(string.format('RSYNC_INT value: %d (0x%x)', R_sync_interval, R_sync_interval))
-	LOG.INFO(string.format('TMG_RSYNC_CFG register value: 0x%x', data_RSYNC_CFG))
-	IIC_W_PEQUIN(0x7C, data_RSYNC_CFG) -- Set TMG_RSYNC_CFG (0x007C) [1, 2]
-	RSYNC_CFG=data_RSYNC_CFG
-	--local read_data = IIC_R_PEQUIN(0x7C)
-    --LOG.INFO(string.format("DATA:0x%X",read_data))
-    local tim2 = TIME.TICK()
+	IIC_W_Tab2(0xE0, { 0x20, 0x82, 0x00, 0x40, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0xCF, 0x20 })
+	DisplayOff()
+	TIME.DELAY(100)
+	DisplayOn()
+	--IIC_W_Tab2(0xFD, {0x80, 0x10, 0x11})
+	IIC_W_Tab2(0xFD, { 0x80, 0x00, 0x91 })
 
-	table.insert(result_table,LUT_val)
-	--local json_data = cjson.encode(result_table)
-	LOG.INFO(LUT_val)
-	return 0, LUT_val
-end
+	--IIC_W_Tab2(0xFD, {0x00, 0x02, 0x94})
 
-function Set_Drive_Condition(pixel_current, duty_cycle)
-	Duty_cycle = duty_cycle
-	local result_table = {}
-	local _,lutData = Set_Duty_Cycle(duty_cycle)
-	local ret,dacwordData=Set_Pixel_Current(pixel_current)
-	table.insert(result_table,dacwordData)
-	table.insert(result_table,lutData)
+	PPMU.CAL_EN(0) --5V on
+
+	GPIO6_A_SET(1)
+	GPIO3_A_SET(0)
+	GPIO2_A_SET(1)
+
+	--IIC_W_Tab2(0xE0, {0x20,0x82,0x00,0x40,0x14,0x00,0x02,0xA0,0x02,0xA0,0x01,0xB0,0xCF,0x20})
+	IIC_R_Tab2(0xE0, 14)
+	IIC_R_Tab2(0xF2, 2)
+	IIC_W_Tab2(0xF2, { 0x12, 0x00 })
+	Power.ValueSetting.SMU2 = 0
+	SMU2(ON, 1, 0x82)
+	TIME.DELAY(1000)
+	local Vol, leakageCurrent = POWER.VOL_CUR(P_SMU2)
+	LOG.INFO(string.format("Preset Vol:%f", Vol))
+
+	--IIC_W_Tab2(0xF8, {0x72,0x10,0x10,0x10,0x20,0x10,0x10,0x25,0x0A,0x0A,0x3F,0x33,0x3F,0x01,0xFF})
+
+	--IIC_W_Tab2(0xF8, {0x72,0x10,0x10,0x10,0x3F,0x10,0x10,0x25,0x0A,0x0A,0x03})
+	for bgr_ibias = 0, 3 do
+		for main_ibias = 0, 15 do
+			--trim_byte = (trim_code << 4) | 0x08
+			--trim_byte = 0x80 | trim_code
+			--trim_byte = (trim_code << 4) | trim_code
+			--trim_byte = (trim_code << 4) | 0x03
+			--trim_byte = trim_code & 0x3F
+			trim_byte = (bgr_ibias << 4) | main_ibias
+			IIC_W_Tab2(0xF8, { 0x72, 0x10, 0x10, 0x10, 0x20, 0x10, 0x10, 0x25, 0x0A, 0x0A, trim_byte })
+			--0x11,0x20,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+			--0x20,0x20,0x20,0x20,trim_byte})
+			LOG.INFO(string.format("trim_byte = 0x%x", trim_byte))
+			TIME.DELAY(200)
+			local measure_voltage, measure_current = POWER.VOL_CUR(P_SMU2)
+
+			--local average_voltage = 0
+			--for i =0, 10 do
+			--TIME.DELAY(10)
+			--local measure_voltage, measure_current = POWER.VOL_CUR(P_SMU2)
+			--average_voltage = average_voltage + measure_voltage
+			--end
+			--average_voltage = average_voltage / 11
+
+			LOG.INFO(string.format("BGR_IBIAS = %d,VOL= %.6f", trim_byte, measure_voltage))
+			table.insert(result_table, measure_voltage)
+			if math.abs(measure_voltage - target_voltage) < math.abs(best_voltage - target_voltage) then
+				best_voltage = measure_voltage
+				best_trim = trim_byte
+				LOG.INFO(string.format("best_voltage:%.6f", best_voltage))
+			end
+		end
+	end
+	LOG.INFO(string.format("best_trim= %d, best_voltage:%.6f", best_trim, best_voltage))
+
+	table.insert(result_table, best_voltage)
+	table.insert(result_table, best_trim)
 	local json_data = cjson.encode(result_table)
-	LOG.INFO(json_data) 
-	return ret,json_data 
+	LOG.INFO(json_data)
+
+	Power.ValueSetting.DVDD = 800
+	DVDD(ON)
+	PPMU.CAL_EN(1)
+	GPIO6_A_SET(1)
+	GPIO3_A_SET(0)
+	GPIO2_A_SET(1)
+	TIME.DELAY(20)
+	SMU2(OFF, 0)
+
+	return 0, json_data
 end
 
+-----done
 function apply_DAC_calibration_code()
 	println("apply_DAC_calibration_code")
-	println("DAC_calibration_code:0x%X",DAC_calibration_code)
-	i3c_write(0x00D8, DAC_calibration_code)
-	println("Apply DAC_calibration_code:0x%08X",DAC_calibration_code)
+	println("DAC_calibration_code:0x%X", DAC_calibration_code)
+	IIC_W_Tab2(0xF8, DAC_cal_buf)
+	println("Apply DAC_calibration_code:0x%08X", DAC_calibration_code)
 end
 
 --apply_DAC_CAL_code(10)
 function apply_DAC_CAL_code(DAC_CAL_code)
 	println("apply_DAC_CAL_code")
-    local dac_ctrl = 0
-    dac_ctrl = (DAC_CAL_code << 16) | 3
-	println("DAC_calibration_code:0x%X",dac_ctrl)
-	i3c_write(0x00D8, dac_ctrl)
-	println("Apply DAC_calibration_code:0x%08X",dac_ctrl)
+	DAC_calibration_code = DAC_CAL_code
+	println("DAC_calibration_code:0x%X", DAC_calibration_code)
+	IIC_W_Tab2(0xF8, DAC_cal_buf)
+	println("Apply DAC_calibration_code:0x%08X", DAC_calibration_code)
 end
 
-function apply_DI_trim_code()
-	println("apply_DI_trim_code")
-	println("DI_trim_code:0x%X",DI_trim_code)
-	i3c_write(0xDC, DI_trim_code)
-	println("Apply DI_trim_code:0x%08X",DI_trim_code)
-end
+------done
+
+
 
 --apply_DAC_WORD_code(300)
 function apply_DAC_WORD_code(DAC_WORD_code)
 	println("apply_DAC_WORD_code")
-	println("DAC_WORD_code:0x%X",DAC_WORD_code)
-	i3c_write(0xDC, DAC_WORD_code)
-	println("Apply DAC_WORD_code:0x%08X",DAC_WORD_code)
+	println("DAC_WORD_code:0x%X", DAC_WORD_code)
+	IIC_W_Tab2(0xDC, DAC_WORD_code)
+	println("Apply DAC_WORD_code:0x%08X", DAC_WORD_code)
 end
 
-function calculate_Dichotomy(darkcurrent,Target_current,difference_value,register_value,DutyCycle)
+--[[
+Function: Temperature_Sensor_ADC
+Desc: Read temperature sensor raw ADC code. Unlock register, configure TSL/TSR temperature sensor, only fetch raw 10bit code without converting to Celsius temperature.
+Input: None
+Return:
+    0          : Function complete status
+    json_data  : Json array [TSL_RAW_CODE, TSR_RAW_CODE]
+--]]
+function Temperature_Sensor_ADC()
+	local results = {}
+	IIC.WRITE(0x60, { 0xF0 }, { 0x5a, 0x5a }) -- Level2 Key
+	IIC.WRITE(0x60, { 0xF1 }, { 0x5a, 0x5a }) -- OTP Key
+	IIC.WRITE(0x60, { 0xFc }, { 0x5a, 0x5a }) -- third key
+
+	IIC_W_Tab2(0xFE, { 0x02, 0x03 })
+
+	-- 温度控制寄存器配置
+	IIC_W_Tab2(0xE0,
+		{ 0x30, 0x82, 0x00, 0x40, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0xCF, 0x30, 0x82, 0x00, 0x41, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0x1F }) --Temperature Control
+	IIC_W_Tab2(0xE0,
+		{ 0x78, 0x82, 0x00, 0x40, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0xCF, 0x78, 0x82, 0x00, 0x41, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0x1F }) --Temperature Control
+	IIC_W_Tab2(0xE0,
+		{ 0x70, 0x82, 0x00, 0x40, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0xCF, 0x70, 0x82, 0x00, 0x41, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0x1F }) --Temperature Control
+	--IIC_W_Tab2(0xE0,0x70)
+
+	local _, readData = IIC_R_Tab2(0xE1, 4)
+	-- rData[1] → 1st P: TSL_DATA_OUT[9:8]
+	-- rData[2] → 2nd P: TSL_DATA_OUT[7:0]
+	-- rData[3] → 3rd P: TSR_DATA_OUT[9:8]
+	-- rData[4] → 4th P: TSR_DATA_OUT[7:0]
+	local tsl_high    = readData[1] & 0x03 -- 低2bit
+	local tsl_low     = readData[2] & 0xFF
+	local TSL_CODE    = (tsl_high << 8) | tsl_low
+
+	local tsr_high    = readData[3] & 0x03 -- 低2bit
+	local tsr_low     = readData[4] & 0xFF
+	local TSR_CODE    = (tsr_high << 8) | tsr_low
 
 
-    -- 核心变量初始化
-    local result = 0  -- 默认返回0，达标后更新为寄存器值
-    local average_current = 0
-    local average_current_table = {}
-    local VOLTAGE = 0
-    local CURRENT = 0
-    local pixel_current = 0
-    local low_value = 0x2B    -- 寄存器最小值（43）
-    local high_value = 0x1FF  -- release to 1FF 20260206--寄存器最大值（341）
-    local mid_value = 0x0
-    local iter = 1
-    local max_iter = 10       -- 最大迭代次数
+	--local function Code2Temp(code)
+	---- 292(-25℃) ~ 732(85℃)
+	--if code < 292 or code >732 then
+	--return nil
+	--end
+	--return -25 + (code - 292) * 0.25
+	--end
 
-    -- 初始寄存器值修正+写入硬件
-    register_value = math.max(low_value, math.min(register_value, high_value))
-    IIC_W_PEQUIN(0xDC, register_value)
-    LOG.INFO(string.format("初始化：寄存器=0x%X，二分区间=[0x%X,0x%X]，目标电流=%.15fuA，允许误差=%.15fuA",
-        register_value, low_value, high_value, Target_current, difference_value))
+	--local tempLeft = Code2Temp(TSL_CODE)
+	--local tempRight = Code2Temp(TSR_CODE)
 
-    -- 首次采样计算初始电流
-    for i = 1, 5 do
-        TIME.DELAY(50)
-        VOLTAGE, CURRENT = POWER.VOL_CUR(6)
-        pixel_current = ((math.abs(CURRENT)/1000) - (math.abs(darkcurrent)/1000)) / (768 * 576 * DutyCycle)
-        table.insert(average_current_table, pixel_current)
-        LOG.INFO(string.format("首次采样[%d]：%.15fuA", i, pixel_current))
-    end
-    table.sort(average_current_table)
-    table.remove(average_current_table, 1)
-    table.remove(average_current_table, #average_current_table)
-    for _, val in ipairs(average_current_table) do
-        average_current = average_current + val
-    end
-    average_current = average_current / #average_current_table
-    LOG.INFO(string.format("初始平均电流：%.15fuA（与目标差值：%.15fuA）",
-        average_current, math.abs(average_current - Target_current)))
+	--LOG.INFO(string.format("TSL_CODE = %d, Left Temp = %s ℃", TSL_CODE, tostring(tempLeft or "OutRange")))
+	--LOG.INFO(string.format("TSR_CODE = %d, Right Tmp = %s ℃", TSR_CODE, tostring(tempRight or "OutRange")))
 
-    -- 初始电流已合格，直接返回寄存器值
-    if math.abs(average_current - Target_current) <= difference_value then
-        result = register_value
-        LOG.INFO(" 初始电流已达标，返回寄存器值0x%X", result)
-        return result, average_current
-    end
 
-    -- 二分法迭代调节
-    while math.abs(average_current - Target_current) > difference_value and iter <= max_iter do
-        LOG.INFO("\n=== 迭代["..iter.."/"..max_iter.."] ===")
-        -- 重新采样电流（清空旧数据）
-        average_current_table = {}
-        average_current = 0
-        for i = 1, 5 do
-            TIME.DELAY(50)
-            VOLTAGE, CURRENT = POWER.VOL_CUR(6)
-            pixel_current = ((math.abs(CURRENT)/1000) - (math.abs(darkcurrent)/1000)) / (768 * 576 * DutyCycle)
-            table.insert(average_current_table, pixel_current)
-            LOG.INFO(string.format("采样[%d]：%.15fuA", i, pixel_current))
-        end
-        -- 滤波计算平均电流
-        table.sort(average_current_table)
-        table.remove(average_current_table, 1)
-        table.remove(average_current_table, #average_current_table)
-        for _, val in ipairs(average_current_table) do
-            average_current = average_current + val
-        end
-        average_current = average_current / #average_current_table
-        LOG.INFO(string.format("迭代[%d]平均电流：%.15fuA（差值：%.15fuA）",
-            iter, average_current, math.abs(average_current - Target_current)))
+	--table.insert(results,tempLeft)
+	--table.insert(results,tempRight)
+	table.insert(results, TSL_CODE)
+	table.insert(results, TSR_CODE)
 
-        -- 二分法核心逻辑
-        local current_diff = math.abs(average_current - Target_current)
-        if current_diff > difference_value and average_current > Target_current then
-            LOG.INFO(" 电流偏大，下调寄存器（当前区间：[0x"..string.format("%X",low_value)..",0x"..string.format("%X",high_value).."]）")
-            high_value = register_value
-            mid_value = math.floor((low_value + high_value) / 2)
-            register_value = math.max(low_value, math.min(mid_value, high_value))
-        elseif current_diff > difference_value and average_current < Target_current then
-            LOG.INFO(" 电流偏小，上调寄存器（当前区间：[0x"..string.format("%X",low_value)..",0x"..string.format("%X",high_value).."]）")
-            low_value = register_value
-            mid_value = math.ceil((low_value + high_value) / 2)
-            register_value = math.max(low_value, math.min(mid_value, high_value))
-        end
 
-        -- 写入新寄存器值+硬件稳定延时
-        IIC_W_PEQUIN(0xDC, register_value)
-        LOG.INFO(string.format("迭代[%d]寄存器更新为：0x%X（新区间：[0x%X,0x%X]）",
-            iter, register_value, low_value, high_value))
-        --TIME.DELAY(150)
-
-        -- 检查是否收敛，收敛则更新result并返回
-        if current_diff <= difference_value then
-            result = register_value
-            LOG.INFO(string.format(" 迭代[%d]调节成功！最终电流：%.15fuA，寄存器：0x%X",
-                iter, average_current, result))
-            return result, average_current,iter
-        end
-
-        iter = iter + 1
-    end
-
-    -- 【核心新增】迭代10次未收敛，返回0
-    local final_diff = math.abs(average_current - Target_current)
-    if iter > max_iter and final_diff > difference_value then
-        result = 0  -- 强制返回0
-        LOG.ERROR(string.format("❌ 达最大迭代次数（%d次），未调节到目标电流！最终电流：%.15fuA（差值：%.15fuA），返回0",
-            max_iter, average_current, final_diff))
-        return result, average_current,iter
-    end
-
-    -- 迭代次数未超但区间收敛（兜底返回）
-    result = register_value
-    LOG.INFO(string.format("调节结束，最终电流：%.15fuA，寄存器：0x%X", average_current, result))
-    return result, average_current,iter
-end
-
-function Average_current()
-	local data_table={}
-	local data=0
-	for i=1,5,1 do
-			TIME.DELAY(10)
-			local VOLTAGE,CURRENT=POWER.VOL_CUR(6)
-			--pixel_current=((math.abs(CURRENT)/1000)-(math.abs(darkcurrent)/1000))/(768*576*DutyCycle)
-			table.insert(data_table,CURRENT)
-			
-	end
-		table.sort(data_table)
-		table.remove(data_table, 1)
-		table.remove(data_table, #data_table)
-		--LOG.INFO(#data_table)
-		for i=1,#data_table,1 do
-			data=data+data_table[i]
-		end
-		--LOG.INFO(#data_table)
-		data=data/#data_table
-		return data
-end
---Set_Brightness(0.0459)
-function Set_Brightness(duty_cycle_percent,PWM_value,Rsync_value)--后续被Set_Duty_Cyclet替换
-
-	if PWM_value==nil then PWM_value=255 end
-	if Rsync_value==nil then Rsync_value=0x300 << 16 end
-	local tim1 = TIME.TICK()
-	--Set duty cycle for gray 255
-	local result_table = {}
-	frame_rate = 90  --Should be read from Pequin or defined elsewhere in Lua config
-	ref_clock = 50000000  --Should be measured from Pequin or defined elsewhere in Lua config
-
-	clock_cycles_per_frame = ref_clock/frame_rate
-	Rsync = clock_cycles_per_frame/768-------
-	LUT_val = math.floor(duty_cycle_percent*clock_cycles_per_frame/PWM_value)--255
-	LOG.INFO(string.format('LUT_val: %f',LUT_val))
-	data_LUT_val = math.tointeger(math.floor(LUT_val)) & 0xFFFFFFFF 
-	LOG.INFO(string.format('LUT_val register value: 0x%x',data_LUT_val))
-	
-	--Set LUT value
-	IIC_W_PEQUIN(0x18, 0xC9) --LUT_WR_CTRL
-	IIC_W_PEQUIN(0x68, 0x1) --PAI_SETUP
-	IIC_W_PEQUIN(0x60, 0x80) --PAI_LUT_XB_CTRL
-	IIC_W_PEQUIN(0x8000,data_LUT_val) -- Set LUT value
-	IIC_W_PEQUIN(0x18, 0xC0) --LUT_WR_CTRL
-	LUT_code=data_LUT_val
-	--Set the R_sync delay
-	R_sync = clock_cycles_per_frame/768----
-	R_sync_interval = math.tointeger(math.floor(Rsync))-------723
-	local RSYNC_NUM_VALUE = Rsync_value--0x300 << 16  -- Setting RSYNC_NUM to 768 (0x300)--
-	local RSYNC_INT_VALUE = R_sync_interval & 0xFFF -- Masking interval to 12 bits------723
-	local data_RSYNC_CFG = RSYNC_NUM_VALUE | RSYNC_INT_VALUE
-	LOG.INFO(string.format('RSYNC_INT value: %d (0x%x)', R_sync_interval, R_sync_interval))
-	LOG.INFO(string.format('TMG_RSYNC_CFG register value: 0x%x', data_RSYNC_CFG))
-	IIC_W_PEQUIN(0x7C, data_RSYNC_CFG) -- Set TMG_RSYNC_CFG (0x007C) [1, 2]
-	RSYNC_CFG=data_RSYNC_CFG
-	local read_data = IIC_R_PEQUIN(0x7C)
-    LOG.INFO(string.format("DATA:0x%X",read_data))
-    local tim2 = TIME.TICK()
-    LOG.INFO("Power-up time: " .. string.format("%.3f", (tim2 / 1000 - tim1 / 1000)) .. " seconds")
-	if read_data == data_RSYNC_CFG then
-    	local json_data = cjson.encode(duty_cycle_percent)
-		LOG.INFO(json_data)
-		return 0, json_data
-	else
-		LOG.ERROR("Failed to set pixel current")
-		local cur="Fail"
-		table.insert(result_table,cur)
-		local json_data = cjson.encode(result_table)
-		LOG.INFO(json_data)
-    	return 1,json_data
-    end
-end
-
-function EFuse_bits_read_v2(addressLSB, bitwidth, bitStart)
-
-	local result_table={}
-	-- Configure eFuse reading
-	i3c_write(0x0140, 0x10000000) -- Select eFuse debug field
-	i3c_write(0x0148, 0xffffffff) -- Enable all GPIO pins
-	i3c_write(0x0138, 0x00001909) -- Mux eFuse bus onto GPIOs
-	i3c_write(0x0000, 0x0010C000) -- Enable eFuse controller clock
-	i3c_write(0x015c, 0x00000011) -- Set read setup, hold and pulse width
-	i3c_write(0x0164, 0x00000519) -- Set VQPS setup & hold
-	
-	TIME.DELAY(10)
-	local results_table={}
-	local efuse_data = {}
-	local rows_start = math.floor(addressLSB/8) -- rows_start
-	local rows_end = math.ceil((addressLSB+4)/8) -- rows_end
-	-- Read entire eFuse block
-	local n = 0
-	for row = rows_start, rows_end do
-		local read_cmd = 0x00004000 | row -- Read command with row address
-		i3c_write(0x0154, read_cmd)
-		--wait(10e-6) -- Wait for read to complete
-		TIME.DELAY(10)
-		-- Read eFuse byte from CSR
-		local efuse_byte = i3c_read(0x0158) & 0xFF
-		efuse_data[n+1] = efuse_byte
-		println("read efuse_data[%d]=0x%02X",n+1,efuse_data[n+1])
-		n = n+1
-	end
-	local efuse_data_hex = 0
-	--local efuse_data = {0x15}
-	local a = 0
-	for i = 1,#efuse_data do 
-		efuse_data_hex = efuse_data_hex | efuse_data[i] << a *8
-		a = a+1
-		--println("efuse_data_hex：0x%x",efuse_data_hex)
-	end
-	println("readefuse_data_hex：0x%x",efuse_data_hex) 
-	local mask = 1
-	efuse_data_bin = extract_bits(efuse_data_hex, bitStart, bitwidth)
-	println("read efuse_data_bin：0x%x",efuse_data_bin) 
-	println("read efuse_data_bin：0b'%s",toBinary(efuse_data_bin)) 
-	table.insert(result_table,addressLSB)
-	table.insert(result_table,efuse_data_bin)
-	table.insert(result_table,bitStart)
-	table.insert(result_table,bitwidth)
-	local json_data = cjson.encode(result_table)
-	LOG.INFO(json_data)
-	return 0,json_data
-	
-end
-
---20260128 ADD
-function AVEE_Current_Measurement()
-
-	local result_table ={}
-	local AVEE_DATA_VOLTAGE = 0.0
-	local AVEE_DATA_CURRENT = 0.0
-	
-	AVEE_DATA_VOLTAGE, AVEE_DATA_CURRENT=POWER.VOL_CUR(P_AVEE)
-	AVEE_DATA_CURRENT  = AVEE_DATA_CURRENT/1e6
-	
-	LOG.INFO(string.format("AVEE_DATA :%.4fV, %.4fmA",AVEE_DATA_VOLTAGE, AVEE_DATA_CURRENT))
-	table.insert(result_table,AVEE_DATA_VOLTAGE)
-	table.insert(result_table,AVEE_DATA_CURRENT)
-	
-	result_table=cjson.encode(result_table)
-	LOG.INFO(result_table)
-	
-	return 0,result_table
-end
---Power_Measurement(4)
-function Power_Measurement(channel)
-
-	local result_table ={}
-	local POWER_DATA_VOLTAGE = 0.0
-	local POWER_DATA_CURRENT = 0.0
-	
-	POWER_DATA_VOLTAGE, POWER_DATA_CURRENT=POWER.VOL_CUR(channel)
-	POWER_DATA_CURRENT  = POWER_DATA_CURRENT/1e6
-	
-	LOG.INFO(string.format("AVEE_DATA :%.4fV, %.4fmA",POWER_DATA_VOLTAGE, POWER_DATA_CURRENT))
-	table.insert(result_table,POWER_DATA_VOLTAGE)
-	table.insert(result_table,POWER_DATA_CURRENT)
-	
-	result_table=cjson.encode(result_table)
-	LOG.INFO(result_table)
-	
-	return 0,result_table
-end
---20260204 ADD
- function dac_2point_calibration()
-    local results = {}
-
-   	--PPMU.CAL_EN(1)    --5V off
-   	--TIME.DELAY(10)
-    --i3c_write(0x00D8, 0x0) --for init
-    --Power.ValueSetting.SMU1 = 0 --nA or mV
-    --SMU1(ON,0,0x82)    --0:give volage ; 1:give current, range max up to 5
-    
-    --TIME.DELAY(70)--
-    --local refVolt, leakageCurrent = POWER.VOL_CUR(P_SMU1)--dac_full_range_calibration已经SMU已经打开
-    ----println("measured_voltage:%f",measured_voltage)
-    --println("leakageCurrent:%f",leakageCurrent)
-    --apply_calibrated_bandgap_trim_test_two(1)--test_bandgap_trim已经开启
-    --local difference=10 --tolerance
-    --#2:Setup DAC  
-    --local dac_ctrl = 0
-    ----local glbl, dac = get_avee_range_settings(voltage_AVEEE1)--GLBL=BIT[5:4]  DAC=BIT[7:6]
-    --local glbl=1
-    --local dac =0
-    --dac_ctrl = dac_ctrl | (DAC_cal_trim_step << 16) -- DAC_CAL = 5 (recommended start)
-    --local LO_C_MODE = (Color == "Red") and 0 or 1
-    --println("LO_C_MODE:%d",LO_C_MODE)
-    --dac_ctrl = dac_ctrl | (LO_C_MODE << 8) -- LO_C_MODE = 0 for red, 1 for G/B
-    --dac_ctrl = dac_ctrl | (glbl << 6) | (dac << 4) -- AVEE range settings
-    --dac_ctrl = dac_ctrl | (1 << 1) -- UPDATE_IMM
-    --dac_ctrl = dac_ctrl | (1 << 0) -- EN
-    --dac_ctrl = dac_ctrl | (1 << 3) 
-    ----dac_ctrl = dac_ctrl | (1 << 2) 
-    ----dac_ctrl = dac_ctrl & ~ (1 << 3) 
-    --i3c_write(0x00D8, dac_ctrl) -- DAC_CTRL
-
-    --println("dac_ctrl:0x%08X",dac_ctrl)
-    --#3:Set DAC Word to nominal drive current
-    local point1 = 43
-    local point2 = 341
-    i3c_write(0x00DC, point1) -- DAC_WORD
-    println("dac_word:0x%08X",point1)
-    TIME.DELAY(70)--1000ms??????????????????????
-    local refVolt, leakageCurrent1 = POWER.VOL_CUR(P_SMU1)
-    --println("measured_voltage:%f",measured_voltage)
-    println("Code43_Current:%f",leakageCurrent1)
-    
-    i3c_write(0x00DC, point2) -- DAC_WORD
-    println("dac_word:0x%08X",point2)
-    TIME.DELAY(70)--1000ms??????????????????????
-    local refVolt, leakageCurrent2 = POWER.VOL_CUR(P_SMU1)
-    --println("measured_voltage:%f",measured_voltage)
-    println("Code341_Current:%f",leakageCurrent2)
-	
-	SMU1(OFF, 0)
-	if IS_DEBUG=="TRUE" then
-		DAC_POINTA_CODE=337
-		DAC_POINTB_CODE=2638
-	end
-	table.insert(results,math.abs(DAC_POINTA_CODE))
-	table.insert(results,math.abs(DAC_POINTB_CODE))
-	
 	local json_data = cjson.encode(results)
 	LOG.INFO(json_data)
-	return 0,json_data
-	
+	return 0, json_data
 end
---I2C_FRAME_CONTROL(200)
-function I2C_FRAME_CONTROL(num_frames)
 
-	local TMG_ISYNC_CFG_ADDR=0x74
-	local base_value=0x12087a23
-	
-	local cleared_value=base_value & 0x8FFFFFFF
-	local new_value=cleared_value | ((num_frames & 0x7)<<28)
-	
-	for i=1,num_frames do	
-		IIC_W_PEQUIN(0x70, 0x00000000)
-		IIC_W_PEQUIN(TMG_ISYNC_CFG_ADDR, new_value)
-		
-		IIC_W_PEQUIN(0x70, 0x40000003)
-		TIME.DELAY(11)
-		IIC_W_PEQUIN(0x70, 0x80000001)
+--  PLLdivider
+-- Set_PLL_Divider(5)
+function Set_PLL_Divider(pll_div)
+	--local plldiv_val = 0x50 + pll_div - 1
+	IIC_W_Tab2(0xF3, { plldiv_val })
+end
+
+
+
+-- fields: fa = {2 bytes}, e4 = {6 bytes}, pat = VPG pattern gray level
+
+PWM_CASES = {
+	-- Test (1): T_nov1 sweep (T_PWMSET - T_CMPSET)
+	[0]  = { fa = { 0x91, 0x00 }, e4 = { 0x00, 0x08, 0x08, 0x09, 0x12, 0x00 }, pw = 360, set = 10, param = "T_nov1", pat = 0 },
+	[1]  = { fa = { 0x91, 0x00 }, e4 = { 0x00, 0x08, 0x08, 0x0A, 0x13, 0x00 }, pw = 380, set = 20, param = "T_nov1", pat = 0 },
+	[2]  = { fa = { 0x91, 0x00 }, e4 = { 0x00, 0x08, 0x08, 0x0B, 0x14, 0x00 }, pw = 400, set = 30, param = "T_nov1", pat = 0 },
+	[3]  = { fa = { 0x91, 0x00 }, e4 = { 0x00, 0x08, 0x08, 0x0C, 0x15, 0x00 }, pw = 420, set = 40, param = "T_nov1", pat = 0 },
+	[4]  = { fa = { 0x91, 0x00 }, e4 = { 0x00, 0x08, 0x08, 0x0D, 0x16, 0x00 }, pw = 440, set = 50, param = "T_nov1", pat = 0 },
+
+	-- Test (2): T_PCHGB sweep
+	[5]  = { fa = { 0x91, 0x80 }, e4 = { 0x00, 0x03, 0x03, 0x07, 0x10, 0x00 }, pw = 320, set = 30, param = "T_PCHGB", pat = 128 },
+	[6]  = { fa = { 0x91, 0x80 }, e4 = { 0x00, 0x04, 0x04, 0x08, 0x11, 0x00 }, pw = 340, set = 40, param = "T_PCHGB", pat = 128 },
+	[7]  = { fa = { 0x91, 0x80 }, e4 = { 0x00, 0x05, 0x05, 0x09, 0x12, 0x00 }, pw = 360, set = 50, param = "T_PCHGB", pat = 128 },
+	[8]  = { fa = { 0x91, 0x80 }, e4 = { 0x00, 0x06, 0x06, 0x0A, 0x13, 0x00 }, pw = 380, set = 60, param = "T_PCHGB", pat = 128 },
+	[9]  = { fa = { 0x91, 0x80 }, e4 = { 0x00, 0x07, 0x07, 0x0B, 0x14, 0x00 }, pw = 400, set = 70, param = "T_PCHGB", pat = 128 },
+	[10] = { fa = { 0x91, 0x80 }, e4 = { 0x00, 0x08, 0x08, 0x0C, 0x15, 0x00 }, pw = 420, set = 80, param = "T_PCHGB", pat = 128 },
+	[11] = { fa = { 0x91, 0x80 }, e4 = { 0x00, 0x09, 0x09, 0x0D, 0x16, 0x00 }, pw = 440, set = 90, param = "T_PCHGB", pat = 128 },
+
+	-- Test (3): T_nov2 sweep (T_CMPSET - T_PCHGB)
+	[12] = { fa = { 0x91, 0x00 }, e4 = { 0x00, 0x08, 0x08, 0x0C, 0x15, 0x00 }, pw = 340, set = 0, param = "PWMSET", pat = 0 },
+	[13] = { fa = { 0x91, 0x00 }, e4 = { 0x00, 0x08, 0x09, 0x0D, 0x16, 0x00 }, pw = 360, set = 10, param = "PWMSET", pat = 0 },
+	[14] = { fa = { 0x91, 0x00 }, e4 = { 0x00, 0x08, 0x0A, 0x0E, 0x17, 0x00 }, pw = 380, set = 20, param = "PWMSET", pat = 0 },
+
+	-- Test (4): T_PWMTPW sweep (black/white pairs)
+	[15] = { fa = { 0x91, 0x00 }, e4 = { 0x00, 0x08, 0x08, 0x0C, 0x10, 0x00 }, pw = 320, set = 40, param = "PWMSET", pat = 0 },
+	[16] = { fa = { 0x91, 0xFF }, e4 = { 0x00, 0x08, 0x08, 0x0C, 0x10, 0x00 }, pw = 320, set = 40, param = "PWMSET", pat = 255 },
+	[17] = { fa = { 0x91, 0x00 }, e4 = { 0x00, 0x08, 0x08, 0x0C, 0x11, 0x00 }, pw = 340, set = 50, param = "PWMSET", pat = 0 },
+	[18] = { fa = { 0x91, 0xFF }, e4 = { 0x00, 0x08, 0x08, 0x0C, 0x11, 0x00 }, pw = 340, set = 50, param = "PWMSET", pat = 255 },
+	[19] = { fa = { 0x91, 0x00 }, e4 = { 0x00, 0x08, 0x08, 0x0C, 0x12, 0x00 }, pw = 360, set = 60, param = "PWMSET", pat = 0 },
+	[20] = { fa = { 0x91, 0xFF }, e4 = { 0x00, 0x08, 0x08, 0x0C, 0x12, 0x00 }, pw = 360, set = 60, param = "PWMSET", pat = 255 },
+	[21] = { fa = { 0x91, 0x00 }, e4 = { 0x00, 0x08, 0x08, 0x0C, 0x13, 0x00 }, pw = 380, set = 70, param = "PWMSET", pat = 0 },
+	[22] = { fa = { 0x91, 0xFF }, e4 = { 0x00, 0x08, 0x08, 0x0C, 0x13, 0x00 }, pw = 380, set = 70, param = "PWMSET", pat = 255 },
+	[23] = { fa = { 0x91, 0x00 }, e4 = { 0x00, 0x08, 0x08, 0x0C, 0x14, 0x00 }, pw = 400, set = 80, param = "PWMSET", pat = 0 },
+	[24] = { fa = { 0x91, 0xFF }, e4 = { 0x00, 0x08, 0x08, 0x0C, 0x14, 0x00 }, pw = 400, set = 80, param = "PWMSET", pat = 255 },
+	[25] = { fa = { 0x91, 0x00 }, e4 = { 0x00, 0x08, 0x08, 0x0C, 0x15, 0x00 }, pw = 420, set = 90, param = "PWMSET", pat = 0 },
+	[26] = { fa = { 0x91, 0xFF }, e4 = { 0x00, 0x08, 0x08, 0x0C, 0x15, 0x00 }, pw = 420, set = 90, param = "PWMSET", pat = 255 },
+
+	-- Test (5a): pulse-width sweep @ Flat Field GL128
+	[27] = { fa = { 0x91, 0x80 }, e4 = { 0x00, 0x05, 0x05, 0x08, 0x0E, 0x00 }, pw = 280, set = nil, param = "PWMSET", pat = 128 },
+	[28] = { fa = { 0x91, 0x80 }, e4 = { 0x00, 0x05, 0x05, 0x08, 0x0F, 0x00 }, pw = 300, set = nil, param = "PWMSET", pat = 128 },
+	[29] = { fa = { 0x91, 0x80 }, e4 = { 0x00, 0x05, 0x05, 0x09, 0x0F, 0x00 }, pw = 300, set = nil, param = "PWMSET", pat = 128 },
+	[30] = { fa = { 0x91, 0x80 }, e4 = { 0x00, 0x05, 0x05, 0x09, 0x10, 0x00 }, pw = 320, set = nil, param = "PWMSET", pat = 128 },
+	[31] = { fa = { 0x91, 0x80 }, e4 = { 0x00, 0x05, 0x05, 0x09, 0x0E, 0x00 }, pw = 280, set = nil, param = "PWMSET", pat = 128 },
+	[32] = { fa = { 0x91, 0x80 }, e4 = { 0x00, 0x05, 0x05, 0x08, 0x0D, 0x00 }, pw = 260, set = nil, param = "PWMSET", pat = 128 },
+	[33] = { fa = { 0x91, 0x80 }, e4 = { 0x00, 0x04, 0x04, 0x08, 0x0D, 0x00 }, pw = 260, set = nil, param = "PWMSET", pat = 128 },
+	[34] = { fa = { 0x91, 0x80 }, e4 = { 0x00, 0x04, 0x04, 0x07, 0x0C, 0x00 }, pw = 240, set = nil, param = "PWMSET", pat = 128 },
+
+	-- Test (5b): same sweep @ Flat Field GL1
+	[35] = { fa = { 0x91, 0x01 }, e4 = { 0x00, 0x05, 0x05, 0x08, 0x0E, 0x00 }, pw = 280, set = nil, param = "PWMSET", pat = 1 },
+	[36] = { fa = { 0x91, 0x00 }, e4 = { 0x00, 0x05, 0x05, 0x08, 0x0F, 0x00 }, pw = 300, set = nil, param = "PWMSET", pat = 1 },
+	[37] = { fa = { 0x91, 0x01 }, e4 = { 0x00, 0x05, 0x05, 0x09, 0x0F, 0x00 }, pw = 300, set = nil, param = "PWMSET", pat = 1 },
+	[38] = { fa = { 0x91, 0x01 }, e4 = { 0x00, 0x05, 0x05, 0x09, 0x10, 0x00 }, pw = 320, set = nil, param = "PWMSET", pat = 1 },
+	[39] = { fa = { 0x91, 0x01 }, e4 = { 0x00, 0x05, 0x05, 0x09, 0x0E, 0x00 }, pw = 280, set = nil, param = "PWMSET", pat = 1 },
+	[40] = { fa = { 0x91, 0x01 }, e4 = { 0x00, 0x05, 0x05, 0x08, 0x0D, 0x00 }, pw = 260, set = nil, param = "PWMSET", pat = 1 },
+	[41] = { fa = { 0x91, 0x01 }, e4 = { 0x00, 0x04, 0x04, 0x08, 0x0D, 0x00 }, pw = 260, set = nil, param = "PWMSET", pat = 1 },
+	[42] = { fa = { 0x91, 0x01 }, e4 = { 0x00, 0x04, 0x04, 0x07, 0x0C, 0x00 }, pw = 240, set = nil, param = "PWMSET", pat = 1 },
+
+	-- Test (5c): same sweep @ Flat Field GL254
+	[43] = { fa = { 0x91, 0xFE }, e4 = { 0x00, 0x05, 0x05, 0x08, 0x0E, 0x00 }, pw = 280, set = nil, param = "PWMSET", pat = 254 },
+	[44] = { fa = { 0x91, 0xFE }, e4 = { 0x00, 0x05, 0x05, 0x08, 0x0F, 0x00 }, pw = 300, set = nil, param = "PWMSET", pat = 254 },
+	[45] = { fa = { 0x91, 0xFE }, e4 = { 0x00, 0x05, 0x05, 0x09, 0x0F, 0x00 }, pw = 300, set = nil, param = "PWMSET", pat = 254 },
+	[46] = { fa = { 0x91, 0xFE }, e4 = { 0x00, 0x05, 0x05, 0x09, 0x10, 0x00 }, pw = 320, set = nil, param = "PWMSET", pat = 254 },
+	[47] = { fa = { 0x91, 0xFE }, e4 = { 0x00, 0x05, 0x05, 0x09, 0x0E, 0x00 }, pw = 280, set = nil, param = "PWMSET", pat = 254 },
+	[48] = { fa = { 0x91, 0xFE }, e4 = { 0x00, 0x05, 0x05, 0x08, 0x0D, 0x00 }, pw = 260, set = nil, param = "PWMSET", pat = 254 },
+	[49] = { fa = { 0x91, 0xFE }, e4 = { 0x00, 0x04, 0x04, 0x08, 0x0D, 0x00 }, pw = 260, set = nil, param = "PWMSET", pat = 254 },
+	[50] = { fa = { 0x91, 0xFE }, e4 = { 0x00, 0x04, 0x04, 0x07, 0x0C, 0x00 }, pw = 240, set = nil, param = "PWMSET", pat = 254 },
+
+}
+
+PWM_CASE_MIN = 0
+PWM_CASE_MAX = 50
+
+-- helper: format a byte table as hex for logging
+local function hexstr(t)
+	local parts = {}
+	for i = 1, #t do parts[i] = string.format("0x%02X", t[i]) end
+	return "{" .. table.concat(parts, ",") .. "}"
+end
+
+-- log line: swap print() for your harness's logger if needed
+function PWM_log(msg)
+	print(msg)
+	-- TheExec.Datalog.WriteComment(msg)   -- IG-XL datalog
+end
+
+
+---new duty cycle-----
+-- Program duty cycle via EOTF_Bypass_Value[11:0]
+-- ON_TIME    = EOTF_Bypass_Value * 10 * 256 * 2   (in TIME_UNIT_S units)
+-- duty_cycle = ON_TIME / (1 / refresh_rate) * 100
+
+local TIME_UNIT_S = 1e-9         -- time base of ON_TIME formula (assumed 1 ns)
+local STEP        = 10 * 256 * 2 -- 5120 units per count
+local MAX_VALUE   = 0xFFF        -- 12-bit register field
+
+-- Input : refresh_hz (e.g. 90), duty_pct (0..100)
+-- Output: EOTF_Bypass_Value[7:0], EOTF_Bypass_Value[11:8], full value, actual duty %
+function calc_EOTF_Bypass_Value(refresh_hz, duty_pct)
+	assert(refresh_hz > 0, "refresh rate must be > 0")
+	assert(duty_pct >= 0 and duty_pct <= 100, "duty must be 0..100 %")
+
+	local frame_s = 1 / refresh_hz        -- 90 Hz -> 11.111 ms
+	local on_s    = frame_s * duty_pct / 100 -- required ON_TIME
+	local value   = math.floor(on_s / (STEP * TIME_UNIT_S) + 0.5)
+
+	if value > MAX_VALUE then
+		LOG.INFO(string.format("WARNING: value %d > 0xFFF, clamping", value))
+		value = MAX_VALUE
+	end
+
+	local val_7_0     = value % 256               -- EOTF_Bypass_Value[7:0]
+	local val_11_8    = math.floor(value / 256) % 16 -- EOTF_Bypass_Value[11:8]
+
+	local actual_duty = (value * STEP * TIME_UNIT_S) / frame_s * 100
+	return val_7_0, val_11_8, value, actual_duty
+end
+
+-- Replace with your actual register write
+local function write_reg(name, val)
+	LOG.INFO(string.format("  %-24s = 0x%02X", name, val))
+end
+
+--Set_Duty_Cycle(90, 1)
+function Set_Duty_Cycle(refresh_hz, duty_pct)
+	local v7_0, v11_8, value, actual = calc_EOTF_Bypass_Value(refresh_hz, duty_pct)
+	LOG.INFO(string.format("%g Hz, %.2f%% -> EOTF_Bypass_Value = 0x%03X (%d), actual %.4f%%",
+		refresh_hz, duty_pct, value, value, actual))
+	write_reg("EOTF_Bypass_Value[7:0]", v7_0)
+	write_reg("EOTF_Bypass_Value[11:8]", v11_8)
+
+
+	--IIC_W_Tab2(0xE5,{0x00,0x2A,0x80,0x01,0x54,0x00,0x40,0x00,0x10,0x01,0x00,0x00,0x00})  --PWM Timing Gen
+	--TIME.DELAY(20)
+	IIC_W_Tab2(0xfb, { 0x07, 0x27, 0xe5, 0x01, 0x03, v11_8, v7_0, 0x00, 0x00 })
+	IIC_R_Tab2(0xfb, 10)
+	TIME.DELAY(100)
+	IIC_W_Tab2(0xf4, { 0x1 })
+
+	return v7_0, v11_8
+end
+
+---duty cycle-----
+
+--------------------------------------------------------current-----------------------------------
+-- Program uLED current via BIASTOP_GLBC[8:0]
+-- I_LED = BIASTOP_GLBC * 21 nA
+
+local LSB_NA    = 21    -- 21 nA per code
+local MAX_VALUE = 0x1FF -- 9-bit field (511)
+
+-- Input : current_ua (uA)
+-- Output: BIASTOP_GLBC[7:0], BIASTOP_GLBC[8:8], full code, actual current (uA)
+function calc_BIASTOP_GLBC(current_ua)
+	assert(current_ua and current_ua >= 0, "current must be >= 0 uA")
+
+	local value = math.floor(current_ua * 1000 / LSB_NA + 0.5) -- round to nearest code
+
+	if value > MAX_VALUE then
+		LOG.INFO(string.format("WARNING: %.3f uA exceeds max %.3f uA, clamping",
+			current_ua, MAX_VALUE * LSB_NA / 1000))
+		value = MAX_VALUE
+	end
+
+	local val_7_0   = value % 256              -- BIASTOP_GLBC[7:0]
+	local val_8     = math.floor(value / 256) % 2 -- BIASTOP_GLBC[8:8]
+
+	local actual_ua = value * LSB_NA / 1000
+	return val_7_0, val_8, value, actual_ua
+end
+
+-- Replace with your actual register write
+local function write_reg_cur(name, val)
+	LOG.INFO(string.format("  %-18s = 0x%02X", name, val))
+end
+
+
+--Set_Pixel_Current(5.2)
+function Set_Pixel_Current(current_ua)
+	local v7_0, v8, value, actual = calc_BIASTOP_GLBC(current_ua)
+	LOG.INFO(string.format("%.3f uA -> BIASTOP_GLBC = 0x%03X (%d), actual %.3f uA",
+		current_ua, value, value, actual))
+	write_reg_cur("BIASTOP_GLBC[7:0]", v7_0)
+	write_reg_cur("BIASTOP_GLBC[8:8]", v8)
+
+	IIC_W_Tab2(0xf6, { 00, v8, v7_0 })
+
+	return v7_0, v8
+end
+
+---------------------------------------------currnet------------------------------
+
+
+--Input : color = "Red" / "Green" / "Blue"
+--Set_Device_Condition_By_Color("Red")
+function Set_Device_Condition_By_Color(color)
+	local colorParam = {
+		Red = { avee = -2300, pixel_uA = 2.0, dutyPct = 4.59, target_delta = 0.01},
+		Green = { avee = -3000, pixel_uA = 0.8, dutyPct = 4.59, target_delta = 0.025},
+		Blue = { avee = -3000, pixel_uA = 0.4, dutyPct = 4.59, target_delta = 0.05},
+	}
+
+	local cfg        = colorParam[color]
+	if cfg == nil then
+		LOG.ERROR(string.format("Set_Device_Condition_byColor invalid [%s]", color))
+		return 0
+	end
+	--Set AVEE Voltage
+	POWER.SINGLE_SET(Power.ChannelSetting.AVEE1, 1, 0x85, Power.CONSTANT_VOLTAGE, cfg.avee, Power.OVPSetting.AVEE1,
+		Power.UVPSetting.AVEE1, Power.OCPSetting.AVEE1, Power.UCPSetting.AVEE1, Power.UCPSetting.AVEE1)
+
+	--Set Pixel Current
+	Set_Pixel_Current(cfg.pixel_uA)
+
+	--Set duty Duty_cycle (refresh set to 90Hz)
+	Set_Duty_Cycle(90, cfg.dutyPct)
+
+	LOG.INFO(string.format("[Setup OK] Color :%s, AVEE:%dmV, PixelCurrent:%.2fuA,DutyCycle:%.2f",
+		color, cfg.avee, cfg.pixel_uA, cfg.dutyPct))
+	return colorParam
+end
+
+--Warm_Up_Condition("Green")
+function Warm_Up_Condition(color)
+	local colorParam = {
+		Red = { avee = -5000, pixel_uA = 3.2, dutyPct = 4.59 },
+		Green = { avee = -5000, pixel_uA = 3.2, dutyPct = 9 },
+		Blue = { avee = -5000, pixel_uA = 3.2, dutyPct = 9 },
+	}
+
+	local cfg        = colorParam[color]
+	if cfg == nil then
+		LOG.ERROR(string.format("Set_Device_Condition_byColor invalid [%s]", color))
+		return 0
 	end
 	
-	return 0
+	--Set AVEE Voltage
+	POWER.SINGLE_SET(Power.ChannelSetting.AVEE1, 1, 0x85, Power.CONSTANT_VOLTAGE, cfg.avee, Power.OVPSetting.AVEE1,
+		Power.UVPSetting.AVEE1, Power.OCPSetting.AVEE1, Power.UCPSetting.AVEE1, Power.UCPSetting.AVEE1)
+
+	--Set Pixel Current
+	Set_Pixel_Current(cfg.pixel_uA)
+
+	--Set duty Duty_cycle (refresh set to 90Hz)
+	Set_Duty_Cycle(90, cfg.dutyPct)
+
+	LOG.INFO(string.format("[Setup OK] Color :%s, AVEE:%dmV, PixelCurrent:%.2fuA,DutyCycle:%.2f",
+		color, cfg.avee, cfg.pixel_uA, cfg.dutyPct))
+
+	return 1
 end
 
-function calc_8bit_dec(bit8_str)
-   
-    if type(bit8_str) ~= "string" or #bit8_str ~= 8 then
-        LOG.ERROR("calc_8bit_dec 输入必须是8位二进制字符串")
-    end
-    if not bit8_str:match("^[01]+$") then
-        LOG.ERROR("calc_8bit_dec 输入只能包含0和1")
-    end
+---------------------------------------------------------------------------------
 
-    local dec = 0
-    for i = 1, 8 do
-        local bit_pos =  i  -- 字符串索引：1→8（从左到右）
-        local bit_char = bit8_str:sub(bit_pos, bit_pos)
-        local bit = tonumber(bit_char) or 0
-        dec = dec + bit * (2 ^ (i - 1))
-    end
-    return dec
-end
-
-function  efuse_write_512(val, addressLSB, bitwidth, bitStart)
-	local efuse_bit = 0
-	local addr_shift = 0
-	local Efuse_data = 0
-	local result=0
-	addressLSB = math.floor((addressLSB/8)/2)
-	--println("efuse_write(0x%X,0x%04X,%d,%d)",val, ad dressLSB, bitwidth, bitStart)
-	for i=0, bitwidth-1 do
-		bit=(val>> i)&1
-		efuse_bit = bitStart + addr_shift
-		
-		if efuse_bit > 7 then
-			addressLSB = addressLSB + 1
-			efuse_bit = 0
-			bitStart = 0
-			addr_shift = 0
-		end
-		
-		addr_shift = addr_shift + 1
-
-		if bit == 1 then
-			i3c_write(0x0154, 0x00008000|((efuse_bit << 6) |addressLSB))
-			TIME.DELAY(10)
-		end
+--- Calibrates one on-chip temperature sensor (TSR or TSL) so its DATA_OUT reads 50'C.
+-- Trims <side>_TOP_TRIM[5:0] and <side>_BOT_TRIM[5:0] together with a binary
+-- search over 0~63 until <side>_DATA_OUT equals the 50'C code.
+-- Temperature relation (E1h datasheet): Code = 392 + 4 * T('C), so 50'C = 592.
+-- F8h data : [25] TSL_TOP, [26] TSR_TOP, [27] TSL_BOT, [28] TSR_BOT.
+-- E1h data : bytes 1-2 = TSL_DATA_OUT[9:0], bytes 3-4 = TSR_DATA_OUT[9:0].
+-- Setup per test plan: F0h/F1h/FCh keys, FEh LOGICIPTEST = {0x02, 0x03}, then the
+-- 3x E0h Temperature Control sequence (re-issued before every read; the first E1h
+-- read of each measurement is a dummy).
+-- If the other sensor was already calibrated, its trim code (TSL_calibration_code /
+-- TSR_calibration_code) is preserved in the F8h payload while this side is searched.
+-- The winning code is left written to F8h and stored in global TSR_calibration_code
+-- or TSL_calibration_code.
+-- @param side string  "TSR" (right sensor) or "TSL" (left sensor).
+-- @usage Temp_Sensor_Cal("TSR", 1)   -- calibrate right sensor, sets TSR_calibration_code
+-- @usage Temp_Sensor_Cal("TSL", 1)   -- calibrate left sensor,  sets TSL_calibration_code
+-- @return number status  0 on completion, 1 if side is not "TSR"/"TSL".
+-- @return string json cjson array [best_trim, best_temp_C].
+-- @see VPG_SetFlatField
+function Temp_Sensor_Cal(side, otp_Enable)
+	local function make_ts_trim_payload(tsl_trim, tsr_trim)
+		return {
+			0x72, 0x10, 0x10, 0x10, 0x20, 0x10, 0x10, 0x25,
+			0x0A, 0x0A, 0x03, 0x11, 0x20,
+			0x01, 0x00,
+			0x08, 0x08, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			tsl_trim & 0x3F, -- data 25 : TSL_TOP[5:0]
+			tsr_trim & 0x3F, -- data 26 : TSR_TOP[5:0]
+			tsl_trim & 0x3F, -- data 27 : TSL_BOT[5:0]
+			tsr_trim & 0x3F, -- data 28 : TSR_BOT[5:0]
+			0x88, 0x02, 0x00, 0x02, 0x00, 0x00
+		}
 	end
 
-end
+	local results = {}
+	local temp_table = {}
+	local best_trim = nil
+	local best_diff = math.huge
+	local target_C = 50.0
+	local target_code = 392 + 4 * target_C -- 592
+	local best_code = nil
+	local best_temp = nil
+	local notFound = 0
+	local meas_count = 0
 
-function EFuse_bits_read_512(addressLSB, bitwidth, bitStart)
-
-	local results_table={}
-	local efuse_data = {}
-	local rows_start = math.floor((addressLSB/8)/2) -- rows_start
-	local rows_end = math.ceil(((addressLSB+4)/8)/2) -- rows_end
-	-- Read entire eFuse block
-	local n = 0
-	for row = rows_start, rows_end do
-		local read_cmd = 0x00004000 | row -- Read command with row address
-		i3c_write(0x0154, read_cmd)
-		--wait(10e-6) -- Wait for read to complete
-		TIME.DELAY(10)
-		-- Read eFuse byte from CSR
-		local efuse_byte = i3c_read(0x0158) & 0xFF
-		efuse_data[n+1] = efuse_byte
-		--println("read efuse_data[%d]=0x%02X",n+1,efuse_data[n+1])
-		n = n+1
+	if side ~= "TSR" and side ~= "TSL" then -- only reject when it matches neither
+		LOG.INFO("Temp_Sensor_Cal: side must be \"TSR\" or \"TSL\"")
+		return 1, cjson.encode(results)
 	end
-	local efuse_data_hex = 0
-	--local efuse_data = {0x15}
-	local a = 0
-	for i = 1,#efuse_data do 
-		efuse_data_hex = efuse_data_hex | efuse_data[i] << a *8
-		a = a+1
-		--println("efuse_data_hex：0x%x",efuse_data_hex)
-	end
-	--println("readefuse_data_hex：0x%x",efuse_data_hex) 
-	local mask = 1
-	efuse_data_bin = extract_bits(efuse_data_hex, bitStart, bitwidth)
-	
-	return efuse_data_bin
-end
 
-function Display_Frames_WithPulse(black1_number, w1_number, black2_number, pic_name, delay_time, trigger_keep_time, delay)
-    -- 初始化温度传感器控制寄存器
-    i3c_write(0x00EC, 0x00000012) -- TEMP_SENS_CTRL - THERM_EN, ADC_EN, RESET_ADC
-    i3c_write(0x00F0, 0x00000010) -- TEMP_SAMP_CTRL
+	--VPG_SetFlatField(0)
+	TIME.DELAY(500)
 
-    -- 读取 eFuse 中存储的两个温度传感器校准 ADC 码
-    local codeEfuse1 = EFuse_bits_read(0x154, 10, 4) & 0x03FF
-    local codeEfuse2 = EFuse_bits_read(0x160, 10, 0) & 0x03FF
-    local caled_temp_point = 50   -- 校准温度点，可根据实际情况从 eFuse 读取
+	-- keep the other sensor's trim if it was already calibrated
+	local other_trim = 0
+	if side == "TSR" and TSL_calibration_code ~= nil then other_trim = TSL_calibration_code end
+	if side == "TSL" and TSR_calibration_code ~= nil then other_trim = TSR_calibration_code end
 
-    -- 启动帧显示
-    Soft_Multi_frame(black1_number, w1_number, black2_number, pic_name, delay_time, trigger_keep_time, delay)
+	local tim1 = TIME.TICK()
 
-    -- 存储原始采集数据（电压 mV，电流 nA）
-    local vdd10_vol_raw = {}
-    local vdd10_cur_raw = {}
-    local avee_vol_raw = {}
-    local avee_cur_raw = {}
-    local temp_raw = {}   -- 每个元素为 {temp0, adc0, temp1, adc1}
+	-- I2C keys : unlock protected register banks
+	IIC_W_Tab2(0xF0, { 0x5a, 0x5a }) -- F0h Level2 key
+	IIC_W_Tab2(0xF1, { 0x5a, 0x5a }) -- F1h OTP (eFuse) key
+	IIC_W_Tab2(0xFC, { 0x5a, 0x5a }) -- FCh 3rd key
+	-- FEh LOGICIPTEST : {0x02, 0x03} → enable OTP_OSC_DIV and MIPI_OSC_DIV for temp sensor path
+	IIC_W_Tab2(0xFE, { 0x02, 0x03 })
 
-    -- === 数据采集循环（只采集，不处理） ===
-    for i = 1, 8 do
-        -- 读取电压电流
-        local vdd10_vol, vdd10_cur = POWER.VOL_CUR(P_VDD10)
-        local avee_vol, avee_cur = POWER.VOL_CUR(P_AVEE)
-        table.insert(vdd10_vol_raw, vdd10_vol)
-        table.insert(vdd10_cur_raw, vdd10_cur)
-        table.insert(avee_vol_raw, avee_vol)
-        table.insert(avee_cur_raw, avee_cur)
-
-        -- 读取两个温度传感器
-        local temp_vals = {}   -- {temp0, adc0, temp1, adc1}
-        for adc_source = 1, 2 do   -- adc_source=1 对应传感器0, 2对应传感器1
-            -- 启动手动采样
-            local samp_ctrl = (adc_source << 4)   -- 设置 ADC source
-            i3c_write(0x00F0, samp_ctrl)
-            i3c_write(0x00F0, samp_ctrl | (1 << 1))   -- 触发采样
-            TIME.DELAY(10)   -- 等待转换完成
-
-            -- 读取 ADC 码
-            local adc_code = i3c_read(0x0104) & 0x3FF
-
-            -- 根据校准值计算温度
-            local codeEfuse = (adc_source == 1) and codeEfuse1 or codeEfuse2
-            local temp = caled_temp_point + (adc_code - codeEfuse) / (-1.6)   -- 温度计算公式，与您代码一致
-
-            -- 存入临时表
-            if adc_source == 1 then
-                temp_vals[1] = temp
-                temp_vals[2] = adc_code
-            else
-                temp_vals[3] = temp
-                temp_vals[4] = adc_code
-            end
-        end
-        -- 保存本次采样的温度数据（四个元素）
-        table.insert(temp_raw, temp_vals)
-
-        -- 调试输出
-        LOG.DEBUG(string.format("VDD10_C:%.3f mA, AVEE_C:%.3f mA", vdd10_cur / 1e6, avee_cur / 1e6))
-        LOG.DEBUG(string.format("Temp0:%.2f°C (ADC=0x%X), Temp1:%.2f°C (ADC=0x%X)", 
-            temp_vals[1], temp_vals[2], temp_vals[3], temp_vals[4]))
-    end
-
-    -- === 循环外统一数据处理 ===
-    local max_VDD10_cur_mA = -math.huge
-    local max_VDD10_vol_mV = nil
-    local max_AVEE_cur_abs = -math.huge
-    local max_AVEE_cur_signed_mA = nil
-    local max_AVEE_vol_mV = nil
-    local max_temp_value = -math.huge
-    local max_temp_data = nil   -- 保存温度最大值对应的完整四元素表
-
-    for idx = 1, #vdd10_cur_raw do
-        -- VDD10
-        local vdd10_cur_mA = vdd10_cur_raw[idx] / 1e6
-        if vdd10_cur_mA > max_VDD10_cur_mA then
-            max_VDD10_cur_mA = vdd10_cur_mA
-            max_VDD10_vol_mV = vdd10_vol_raw[idx]
-        end
-
-        -- AVEE
-        local avee_cur_mA = avee_cur_raw[idx] / 1e6
-        local abs_cur = math.abs(avee_cur_mA)
-        if abs_cur > max_AVEE_cur_abs then
-            max_AVEE_cur_abs = abs_cur
-            max_AVEE_cur_signed_mA = avee_cur_mA
-            max_AVEE_vol_mV = avee_vol_raw[idx]
-        end
-
-        -- 温度：取两个传感器中的最大值
-        local t0 = temp_raw[idx][1]
-        local t1 = temp_raw[idx][3]
-        local cur_max = math.max(t0, t1)
-        if cur_max > max_temp_value then
-            max_temp_value = cur_max
-            max_temp_data = {}
-            for _, v in ipairs(temp_raw[idx]) do
-                table.insert(max_temp_data, v)
-            end
-        end
-    end
-
-    -- 构建结果表
-    local result_table = {
-    	VDD10_vol_mV = max_VDD10_vol_mV,
-   		VDD10_cur_mA = max_VDD10_cur_mA,
-    	AVEE_vol_mV = max_AVEE_vol_mV,
-    	AVEE_cur_signed_mA = max_AVEE_cur_signed_mA,
-    }
-    LOG.INFO(string.format("max_VDD10_vol_mV:%.3fmV",max_VDD10_vol_mV*1000))
-    LOG.INFO(string.format("max_VDD10_cur_mA:%.3fmA",max_VDD10_cur_mA))
-    LOG.INFO(string.format("max_AVEE_vol_mV:%.3fmV",max_AVEE_vol_mV*1000))
-    LOG.INFO(string.format("max_AVEE_cur_signed_uA:%.3fuA",max_AVEE_cur_signed_mA*1000/576/768/Duty_cycle))
-    if max_temp_data then
-        for __, v in ipairs(max_temp_data) do
-            table.insert(result_table, v)
-        end
-    end
-
-    local json_data = cjson.encode(result_table)
-    LOG.INFO(json_data)
-    return 0, json_data
-end
-
-function Soft_Multi_frame_Disabled() --关闭帧触发
-	FPGA.PCIE_WRITE(0x25C4, 0x2 | (0<<8) | 0<<16)--防止额外的帧触发
-end
-
-function Warmup_All_On(vol,current_uA,DutyCycle)
-	Sw_by_name("W255.bmp")
-	--POWER.MULTI_SET(
-	    --{ channel = P_AVEE,		en=1, range = 0x85, mode = 0, vol = vol, ovp = vol+100, uvp = 0, ocp = 800*1000*1000,  ucp = 0 }
-	--)
-	POWER_CHANNEL_VALUE(P_AVEE, ON, vol, -vol+100, -800)
+	-- E0h Temperature Control : enable temp-sensor readout (3 configs, each writes 26 bytes)
+	-- Each entry configures a sensor channel with bias/current/settling parameters
+	IIC_W_Tab2(0xE0, { 0x30, 0x82, 0x00, 0x40, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0xCF,
+		0x30, 0x82, 0x00, 0x41, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0x1F })
+	IIC_W_Tab2(0xE0, { 0x78, 0x82, 0x00, 0x40, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0xCF,
+		0x78, 0x82, 0x00, 0x41, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0x1F })
+	IIC_W_Tab2(0xE0, { 0x70, 0x82, 0x00, 0x40, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0xCF,
+		0x70, 0x82, 0x00, 0x41, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0x1F })
 	TIME.DELAY(10)
-	DI_TRIM(current_uA,DutyCycle)
+
+	-- write trim, read temperature code, track best
+	local function measure(trim_val)
+		-- F8h TRIM : set TSR/TSL TOP and BOT trim codes (bytes 25-28)
+		-- only the requested side's trim changes; the other side keeps its existing code
+		if side == "TSR" then
+			IIC_W_Tab2(0xF8, make_ts_trim_payload(other_trim, trim_val)) -- TSL=other_trim, TSR=trim_val
+		else
+			IIC_W_Tab2(0xF8, make_ts_trim_payload(trim_val, other_trim)) -- TSL=trim_val, TSR=other_trim
+		end
+		-- Re-issue E0h Temperature Control after each trim write so the ADC
+		-- sees freshly-configured bias/current parameters before reading back
+		IIC_W_Tab2(0xE0, { 0x30, 0x82, 0x00, 0x40, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0xCF,
+			0x30, 0x82, 0x00, 0x41, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0x1F })
+		IIC_W_Tab2(0xE0, { 0x78, 0x82, 0x00, 0x40, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0xCF,
+			0x78, 0x82, 0x00, 0x41, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0x1F })
+		IIC_W_Tab2(0xE0, { 0x70, 0x82, 0x00, 0x40, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0xCF,
+			0x70, 0x82, 0x00, 0x41, 0x14, 0x00, 0x02, 0xA0, 0x02, 0xA0, 0x01, 0xB0, 0x1F })
+
+		TIME.DELAY(50)
+		IIC_R_Tab2(0xF8, 34) -- read F8h back to latch trim values
+
+		-- E1h Temperature State : first read throws away stale conversion;
+		-- second read returns fresh TSL/TSR codes (bytes 1-2 = TSL, 3-4 = TSR)
+		IIC_R_Tab2(0xE1, 4)         -- 1st read (dummy, flush stale)
+		local _, rd = IIC_R_Tab2(0xE1, 4) -- 2nd read : assumes byte table returned, MSB first
+		local tsl_code = ((rd[1] & 0x03) << 8) | rd[2]
+		local tsr_code = ((rd[3] & 0x03) << 8) | rd[4]
+		local code = tsr_code
+		if side == "TSL" then code = tsl_code end
+		local temp = (code - 392) / 4
+
+		meas_count = meas_count + 1
+		LOG.INFO(string.format("%s trim=%d TSL_OUT=%d TSR_OUT=%d Temp=%.2fC", side, trim_val, tsl_code, tsr_code, temp))
+		table.insert(temp_table, { trim = trim_val, code = code, temp = temp })
+
+		local diff = math.abs(code - target_code)
+		if diff < best_diff then
+			best_diff = diff
+			best_trim = trim_val
+			best_code = code
+			best_temp = temp
+			LOG.INFO(string.format("[%02d] %s best temp out: %.2fC", best_trim, side, best_temp))
+		end
+		return code
+	end
+
+	----------------------------------------------------------------
+	-- Binary search over 6-bit trim code (0 ~ 63) for target 50'C.
+	-- 1) Measure both ends to learn slope direction and confirm the
+	--    target code (592) is inside the sensor's range.
+	-- 2) Bisect until lo/hi are adjacent codes bracketing the target.
+	-- 3) best_trim = whichever measured code is closest (tracked in measure()).
+	-- Total: 2 + ceil(log2(63)) = ~8 measurements (vs. a full 64-code sweep).
+	----------------------------------------------------------------
+	local lo = 0
+	local hi = 63
+	local code_lo = measure(lo)
+	local code_hi = measure(hi)
+	local increasing = (code_hi >= code_lo)
+
+
+	IIC_R_Tab2(0xF8, 34) -- no-op (read-back only)
+	IIC_R_Tab2(0xE1, 4) -- no-op (dummy read, result unused)
+
+
+	if target_code < math.min(code_lo, code_hi) or target_code > math.max(code_lo, code_hi) then
+		notFound = 1
+		LOG.INFO(string.format("%s: 50C not reachable in trim range 0~63", side))
+	else
+		while (hi - lo) > 1 do
+			local mid = (lo + hi) // 2
+			local code = measure(mid)
+			if (code >= target_code) == increasing then
+				hi = mid
+			else
+				lo = mid
+			end
+		end
+	end
+
+	-- Write final winning trim code back to F8h and latch it
+	-- F8h TRIM bytes 25-28 : <side>_TOP_TRIM[5:0] + <side>_BOT_TRIM[5:0]
+	-- The other sensor's trim (already calibrated) is preserved via other_trim
+	if side == "TSR" then
+		TSR_calibration_code = best_trim
+		if otp_Enable == 1 then
+			OTP_Write(other_trim, best_trim)
+		else
+			IIC_W_Tab2(0xF8, make_ts_trim_payload(other_trim, best_trim)) -- TSL=other_trim, TSR=best_trim
+		end
+	else
+		TSL_calibration_code = best_trim
+		if otp_Enable == 1 then
+			OTP_Write(best_trim, other_trim)
+		else
+			IIC_W_Tab2(0xF8, make_ts_trim_payload(best_trim, other_trim)) -- TSL=best_trim, TSR=other_trim
+		end
+	end
 	
-    local json_data = Temperature_Sensor_Thermometer()
+	TIME.DELAY(50)
+	IIC_R_Tab2(0xF8, 34) -- read-back to confirm trim latched
+	
+	local tim2 = TIME.TICK()
+	LOG.INFO(side .. "_Cal time: " .. string.format("%.3f", (tim2 / 1000 - tim1 / 1000)) .. "seconds")
+	LOG.INFO(string.format("[%02d] %s best temp out:%.2fC (code=%d, notFound=%d)", best_trim, side, best_temp, best_code,
+		notFound))
+
+	table.insert(results, best_trim)
+	table.insert(results, best_temp)
+	--table.insert(results, notFound)
+
+	local json_data = cjson.encode(results)
+	LOG.INFO(json_data)
+	return 0, json_data
+end
+
+local function make_ts_trim_payload_otp(tsl_trim, tsr_trim)
+
+    assert(
+        type(tsl_trim) == "number"
+            and tsl_trim == math.floor(tsl_trim)
+            and tsl_trim >= 0
+            and tsl_trim <= 0x3F,
+        "tsl_trim must be an integer in 0..63"
+    )
+
+    assert(
+        type(tsr_trim) == "number"
+            and tsr_trim == math.floor(tsr_trim)
+            and tsr_trim >= 0
+            and tsr_trim <= 0x3F,
+        "tsr_trim must be an integer in 0..63"
+    )
+
+    return {
+        -- data 1～8
+        0x72, 0x10, 0x10, 0x10, 0x20, 0x10, 0x10, 0x25,
+
+        -- data 9～13
+        0x0A, 0x0A, 0x03, 0x11, 0x20,
+
+        -- data 14～15：像素电流Trim
+        0x01, 0x00,
+
+        -- data 16～24
+        0x08, 0x08, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+
+        -- data 25～28：温度Trim
+        tsl_trim & 0x3F, -- data 25：TSL_TOP
+        tsr_trim & 0x3F, -- data 26：TSR_TOP
+        tsl_trim & 0x3F, -- data 27：TSL_BOT
+        tsr_trim & 0x3F, -- data 28：TSR_BOT
+
+        -- data 29～34
+        0x88, 0x02, 0x00, 0x02, 0x00, 0x00
+    }
+end
+
+
+--[[
+Function: OTP_Write
+Input:
+    tsl_trim：TSL校准值，整数0～63
+    tsr_trim：TSR校准值，整数0～63
+Return:
+    1：写入流程执行结束，未进行回读校验
+--]]
+--OTP_Write(0x27, 0x2d)
+function OTP_Write(tsl_trim, tsr_trim)
+
+    -- 根据传入值组装F8数据
+    local trim_buf = make_ts_trim_payload_otp(tsl_trim, tsr_trim)
+
+    -- 开启烧录电源
+    --VQPS(ON)
+    --TIME.DELAY(1000)
+
+    -- Level2解锁
+    IIC_W_Tab2(0xF0, {0x5A, 0x5A})
+    IIC_W_Tab2(0xF1, {0x5A, 0x5A})
+	IIC_W_Tab2(0xFC, {0x5a,0x5a}) --3rd key
+
+    -- 写入完整Trim数据
+    IIC_R_Tab2(0xF8, 34)
+    IIC_W_Tab2(0xF8, trim_buf)
+
+    VQPS(ON)
+    TIME.DELAY(1000)
+
+    -- 触发OTP烧录
+ 
+	IIC_W_Tab2(0xC0, {0x00,0x06})
+
+    -- 等待大于22ms
+    TIME.DELAY(100)
+
+    -- 清除OTP控制
+    IIC_W_Tab2(0xC0, {0x00, 0x00})
+
+    -- 上锁
+    IIC_W_Tab2(0xF0, {0xA5, 0xA5})
+    IIC_W_Tab2(0xF1, {0xA5, 0xA5})
+
+	 TIME.DELAY(50)
+    -- 关闭烧录电源
+    VQPS(OFF)
+    
+    IIC_R_Tab2(0xF8, 34)
+
+    LOG.INFO(string.format(
+        "OTP_Write sequence completed: TSL=0x%02X, TSR=0x%02X",
+        tsl_trim, tsr_trim
+    ))
+
+    return 1
+end
+
+function Get_PG_Version()
+	local results  = {}
+	local version = SYS.VERSION()
+	LOG.INFO(string.format("%s",version ))
+	
+	table.insert(results, version)
+	local json_data= cjson.encode(results)
+	LOG.INFO(json_data)
+	return 0, json_data
+end
+
+
+-- Pixel_Current_DAC_Cal_tmp()
+function Pixel_Current_DAC_Cal_tmp()
+	local R_AMUX_OHM = 100000
+	local TRIM_MIN   = 0
+	local TRIM_MAX   = 511 -- 9-bit trim code
+	local SETTLE_MS  = 450 -- settling time after each trim write
+
+	local results = {}
+	local current_table = {}
+	local best_trim = nil
+	local best_diff = math.huge
+	local target_uA = 5.2
+	local best_current = nil
+	local notFound = 0
+	local meas_count = 0
+
+	local tim1 = TIME.TICK()
+
+-- Y5
+    --AVEE1(OFF)         --AVEE
+
+	SMU2(OFF, 1, 0x85) --Constant Current (measure Voltage)
+	PPMU.CAL_EN(1) --5V off
+	TIME.DELAY(100)
+	Power.ValueSetting.SMU2 = 0
+	TIME.DELAY(100)
+	--SMU2(ON, 0, 0x85)  --0: Constant Voltage (measure Current)
+	SMU2(ON, 1, 0x85)    --1: Constant Current (measure Voltage)
+	TIME.DELAY(100)
+
+	GPIO6_A_SET(0)  -- S0
+	GPIO3_A_SET(0)  -- S1
+	GPIO2_A_SET(0)  -- S2
+
+	GPIO4_A_SET(0)  -- PGM_EN
+
+	IIC_W_Tab2(0xF0, {0x5a,0x5a}) -- level2 key
+	IIC_W_Tab2(0xF1, {0x5a,0x5a}) --OTP key
+	IIC_W_Tab2(0xFC, {0x5a,0x5a}) --3rd key
+	
+
+	IIC_W_Tab2(0xFD, { 0x80, 0x00, 0x91 })   -- VBG
+	IIC_W_Tab2(0xFD, { 0x80, 0x00, 0x95 })   -- VREF
+	IIC_W_Tab2(0xFD, { 0x00, 0x02, 0x94 })	-- IPXL
+	IIC_R_Tab2(0xFD, 3) 
+	TIME.DELAY(50)
+IIC_W_Tab2(0xF8, {0x72,0x10,0x10,0x10, 0x20 ,0x10,0x10,0x25,0x0a,0x0a,0x03,0x11,0x20,  0x01,0x00    ,0x08,0x08,0x10,0x00,0x00,0x00,0x00,0x00,0x00,0x20,0x20,0x20,0x20,0x88,0x02,0x00,0x02,0x00,0x00 })
+	IIC_R_Tab2(0xF8, 24) 
+
+	GPIO4_A_SET(1)  -- PGM_EN
+	TIME.DELAY(50)
+
+	local v = POWER.VOL_CUR(P_SMU2)
+	LOG.INFO(string.format(" AMON = %.4fV",v))
+	
+	TIME.DELAY(10)
+
+	local json_data = cjson.encode(results)
+	LOG.INFO(json_data)
+	return 0, json_data
+	
+
+end
+
+
+--Ramon
+DPHY_HS_CFG = {
+    D5_HS      = 0x03,      -- clock lane HS + 2 lanes
+    D5_LP      = 0x00,      -- clock lane LP (I2C works)
+    I2C_WAIT   = 20,        -- ms after D5_LP before the first I2C access (HS_SHOW value)
+    CFG_WAIT   = 100,       -- ms after the Pinot video-mode setup (HS_SHOW value)
+    SET_RATE   = false,     -- true: re-apply 1600 Mbps here (SIGNAL_CFG already sets it at TP load)
+    RATE_WAIT  = 200,       -- ms after DMIPI.TIMING / FREQ when SET_RATE = true
+    MDIV       = 16,        -- 1600 Mbps (SEL_00: 100 Mbps per step)
+    TIMING     = {0x08, 0x03, 0x04, 0x02, 0x02},   -- vendor SEL_00 values
+    FOLDER     = "./textures_dphy_hs",
+    FIRST_PIC  = "DPHY_HS03_CK64.bmp",
+    PIC_MS     = 500,       -- wait after PIC.SW, and between CRC reads (HS_SHOW used 300)
+    CRC_PICS   = {"DPHY_HS03_CK64.bmp"},
+    CRC_TRY    = 5,         -- CRC reads per image; two consecutive equal reads are needed
+}
+
+DPHY_HS_ON = false
+
+-- Test images (10, folder textures_dphy_hs): {file, role, purpose}. Delete "data" lines to shorten the test.
+-- The full 41-image library: gen_dphy_hs_patterns.py --all (engineering only).
+DPHY_HS_PICS = {
+    -- "cam": visible on the camera (the panel shows only on / off while EOTF bypass is on) + CRC
+    {"DPHY_HS01_W255.bmp", "cam", "full white: all pixels lit"},
+    --{"DPHY_HS02_W0.bmp", "cam", "full black: no pixel lit"},
+    --{"DPHY_HS03_CK64.bmp", "cam", "64 px checker (Video_Test, focus)"},
+    --{"DPHY_HS04_QUADRANT.bmp", "cam", "1-bit orientation: TL white + top notch, TR checker, BL stripes, BR black"},
+    --{"DPHY_HS05_CHANNEL.bmp", "cam", "colour channel: R die shows HS03, G die HS04, B die HS01"},
+    -- "data": grey-level data patterns judged by the VIDEO MUX CRC; the grey levels are not visible while
+    -- EOTF bypass is on, so each carries its number (06..10) drawn in black: the camera sees "lit + number"
+    --{"DPHY_HS06_HRAMP.bmp", "data", "horizontal ramp: all 256 grey codes per line (camera: 06)"},
+    --{"DPHY_HS07_BITBARS.bmp", "data", "8 bands 1,2,4..128: each data bit = 1 alone (camera: 07)"},
+    --{"DPHY_HS08_BITBARS_INV.bmp", "data", "8 bands 254..127: each data bit = 0 alone (camera: 08)"},
+    --{"DPHY_HS09_CK1_55AA.bmp", "data", "1x1 checker 55/AA: every bit toggles every pixel (camera: 09)"},
+    --{"DPHY_HS10_NOISE.bmp", "data", "pseudo-random pixels, PRBS-like (camera: 10)"},
+}
+
+-- DPHY_HS05_CHANNEL: R channel = HS03, G channel = HS04, B channel = HS01. Pinot shows only its own colour
+-- byte, so its CRC must equal the CRC of the reference image of the die colour.
+DPHY_HS_CHANNEL_PIC = "DPHY_HS05_CHANNEL.bmp"
+DPHY_HS_CHANNEL_REF = {R = "DPHY_HS03_CK64.bmp", G = "DPHY_HS04_QUADRANT.bmp", B = "DPHY_HS01_W255.bmp"}
+
+local CF_RESET = {0x13, 0x07, 0xC0, 0xFF, 0xFF, 0x4F, 0x00, 0xBF, 0x1F, 0xC4, 0x01, 0x00, 0x34}
+local NOCRC = {["FF FF FF FF FF FF FF FF"] = true, ["00 00 00 00 00 00 00 00"] = true}
+
+local function d5(v)
+    CORE.SPI_WRITE(0xD5, 0x00, 0x00, 0x00, v)
+end
+
+local function hex(t)
+    if type(t) ~= "table" then return "--" end
+    local s = {}
+    for i = 1, #t do s[i] = string.format("%02X", t[i]) end
+    return table.concat(s, " ")
+end
+
+-- I2C helpers on the current slave address (call only with the clock lane LP)
+local function keys()
+    for _, k in ipairs({0xF0, 0xF1, 0xFC}) do IIC.WRITE(IIC_CONFIG.SLAVE_ADDR, {k}, {0x5A, 0x5A}) end
+end
+
+local function wr(reg, data)
+    keys()
+    IIC.WRITE(IIC_CONFIG.SLAVE_ADDR, {reg}, data)
+end
+
+local function rd(reg, n)
+    local a = IIC_CONFIG.SLAVE_ADDR
+    local ok, d = pcall(IIC.READ, a, {reg}, n)
+    if not ok or type(d) ~= "table" or #d < n then return nil end
+    if n >= 5 and d[2] == (a << 1) and d[3] == reg and d[5] == ((a << 1) | 1) then return nil end
+    return d
+end
+
+local function pic_sw(name)
+    local r = PIC.SW(DPHY_HS_CFG.FOLDER .. "/" .. name)
+    if type(r) == "number" and r ~= 0 then
+        LOG.ERROR(string.format("PIC.SW %s/%s returned %d (file missing? folder copied?)", DPHY_HS_CFG.FOLDER, name, r))
+        return false
+    end
+    return true
+end
+
+function DPHY_HS_I2C(fn)
+    if DPHY_HS_ON then
+        d5(DPHY_HS_CFG.D5_LP)
+        TIME.DELAY(DPHY_HS_CFG.I2C_WAIT)
+    end
+    local ok, res = pcall(fn)
+    if DPHY_HS_ON then d5(DPHY_HS_CFG.D5_HS) end
+    if not ok then
+        LOG.ERROR("DPHY_HS_I2C: " .. tostring(res))
+        return nil
+    end
+    return res
+end
+
+-- Pinot Video mode (same registers and order as HS_SHOW pinot_to_video), clock lane LP
+local function pinot_video_mode()
+    local t = Display.Timing
+    wr(0xFE, {0x12, 0x23})                               -- reset value + CRC_ON
+    wr(0xCF, CF_RESET)                                   -- MIPI RX settings back to reset
+    wr(0xBF, {(t.vdisplay >> 8) & 0x07, t.vdisplay & 0xFF,
+              (t.hdisplay >> 8) & 0x07, t.hdisplay & 0xFF,
+              0x00, t.vbp, 0x00, t.vfp, 0x00, t.hbp, 0x00, t.hfp})
+    wr(0xB4, {0x00, 0x00, 0x00, 0x00})                   -- start position 0,0
+    wr(0xB1, {0x00, 0x88})                               -- TARPMODE = 0 (Video mode)
+    wr(0xBD, {0x00})                                     -- 45 Hz (1600 Mbps x 2 lanes)
+    wr(0xFA, {0x90, 0xFF, 0x00, 0x10, 0x00, 0x80, 0x00, 0x80, 0x00})   -- VPG off
+    wr(0xCA, {0x02})                                     -- CRC on VIDEO MUX
+    wr(0xF4, {0x01})
+    TIME.DELAY(30)
+    IIC.WRITE(IIC_CONFIG.SLAVE_ADDR, {0x29})             -- display on
+    rd(0x05, 1)                                          -- clear DSI error count
+end
+
+function DPHY_HS_VIDEO_ON(pic)
+    pic = pic or DPHY_HS_CFG.FIRST_PIC
+    DPHY_HS_ON = false
+    d5(DPHY_HS_CFG.D5_LP)
+    DMIPI.LP()
+    TIME.DELAY(DPHY_HS_CFG.I2C_WAIT)
+    if not rd(0x0A, 1) then
+        LOG.ERROR("DPHY_HS_VIDEO_ON: no I2C answer at 0x" .. string.format("%02X", IIC_CONFIG.SLAVE_ADDR) .. ", run DisplayOn() first")
+        return 1
+    end
+    if DPHY_HS_CFG.SET_RATE then
+        local tm = DPHY_HS_CFG.TIMING
+        DMIPI.TIMING(tm[1], tm[2], tm[3], tm[4], tm[5])
+        DMIPI.FREQ(1, 1, DPHY_HS_CFG.MDIV, 1)
+        TIME.DELAY(DPHY_HS_CFG.RATE_WAIT)
+    end
+    pinot_video_mode()
+    TIME.DELAY(DPHY_HS_CFG.CFG_WAIT)
+
+    DMIPI.VID()
+    DMIPI.HS()
+    DMIPI.OPEN()
+    if not pic_sw(pic) then return 1 end
+    d5(DPHY_HS_CFG.D5_HS)                                -- clock lane HS last
+    DPHY_HS_ON = true
+    bist_mode = 0
+    TIME.DELAY(DPHY_HS_CFG.PIC_MS)
+    LOG.INFO("DPHY_HS_VIDEO_ON: " .. pic .. " (800 Mbps x 2 lanes, 20 Hz)")
+    return 0
+end
+
+function DPHY_HS_IMG(n)
+    local name = n
+    if type(n) == "number" then name = DPHY_HS_PICS[n] and DPHY_HS_PICS[n][1] end
+    name = name or DPHY_HS_CFG.FIRST_PIC
+    LOG.INFO("DPHY_HS_IMG: " .. tostring(name))
+    return pic_sw(name) and 0 or 1
+end
+
+function DPHY_HS_VIDEO_OFF()
+    DPHY_HS_ON = false
+    d5(DPHY_HS_CFG.D5_LP)
+    DMIPI.LP()
+    TIME.DELAY(DPHY_HS_CFG.I2C_WAIT)
+    wr(0xB1, {0x01, 0x88})                               -- TARP mode (reset)
+    wr(0xBD, {0x10})                                     -- 90 Hz (FirstPicture value)
+    wr(0xFA, {0x91, 0xFF, 0x00, 0x10, 0x00, 0x80, 0x00, 0x80, 0x00})   -- VPG flat field 255
+    wr(0xF4, {0x01})
+    bist_mode = 1
+    LOG.INFO("DPHY_HS_VIDEO_OFF: back to TARP mode + VPG flat white")
+    return 0
+end
+
+function DPHY_HS_STATUS()
+    local s = DPHY_HS_I2C(function()
+        return {pm = rd(0x0A, 1), sm = rd(0x0E, 1), err = rd(0x05, 1)}
+    end) or {}
+    LOG.INFO(string.format("DPHY_HS_STATUS | 0Ah %s | 0Eh %s | 05h %s", hex(s.pm), hex(s.sm), hex(s.err)))
+    return s
+end
+
+-- VIDEO MUX CRC of the image on screen: up to CRC_TRY reads, two consecutive equal reads are needed.
+-- Keys are written before each read (CBh is an MCS register); all-FF / all-00 reads are rejected.
+local function crc_of(pic)
+    if not pic_sw(pic) then return nil, "load" end
+    TIME.DELAY(DPHY_HS_CFG.PIC_MS)
+    local last, seen = nil, {}
+    for _ = 1, DPHY_HS_CFG.CRC_TRY do
+        local c = DPHY_HS_I2C(function() keys() return rd(0xCB, 8) end)
+        local s = c and hex(c) or "no answer"
+        seen[#seen + 1] = s
+        if NOCRC[s] or s == "no answer" then
+            s = nil
+        elseif s == last then
+            return s
+        end
+        last = s
+        TIME.DELAY(DPHY_HS_CFG.PIC_MS)
+    end
+    return nil, table.concat(seen, " / ")
+end
+
+-- VIDEO MUX CRC of the image on screen, no repeat check: the first non-empty read is returned.
+-- Empty = no I2C answer, or all-FF / all-00. Up to CRC_TRY reads (CRC_TRY = 1: a single read).
+local function crc_any(pic)
+    if not pic_sw(pic) then return nil, "load" end
+    TIME.DELAY(DPHY_HS_CFG.PIC_MS)
+    local raw = {}
+    for _ = 1, DPHY_HS_CFG.CRC_TRY do
+        local c = DPHY_HS_I2C(function() keys() return rd(0xCB, 8) end)
+        local h = c and hex(c) or "no answer"
+        if c and not NOCRC[h] then return h end
+        raw[#raw + 1] = h
+        TIME.DELAY(DPHY_HS_CFG.PIC_MS)
+    end
+    return nil, table.concat(raw, " / ")
+end
+
+-- Production item. PASS when:
+--   DPHY_HS_VIDEO_ON ok, Pinot power mode 0Ah = 1C (sleep out, normal, display on),
+--   CRC of CRC_PICS[1] is not empty (I2C answers and the read is not all-FF / all-00).
+function MIPI_DPHY_HS_Init_Test()
+    local result = {}
+    if DPHY_HS_VIDEO_ON(DPHY_HS_CFG.FIRST_PIC) ~= 0 then
+   	 	DPHY_HS_ON = false
+        CORE.SPI_WRITE(0xD5, 0x00, 0x00, 0x00, 0x00)   -- clock lane LP, I2C works again
+        DMIPI.LP()
+        DMIPI.CMD()                                     -- stop the video stream (DMIPI.VID)
+        bist_mode = 1                                   -- back to VPG mode (PIC_CFG default)
+        TIME.DELAY(20)
+        LOG.INFO(string.format("DPHY_HS_MODE = %s",DPHY_HS_ON))
+        return 1, cjson.encode({"Fail", "DPHY_HS_VIDEO_ON"})
+    end
+    LOG.INFO(string.format("DPHY_HS_MODE = %s",DPHY_HS_ON))
+    TIME.DELAY(50)
+    local crc = {}
+    for i, p in ipairs(DPHY_HS_CFG.CRC_PICS) do
+        local c, why = crc_any(p)
+        crc[i] = c or "none"
+        LOG.INFO(string.format("  %s: CRC %s", p, c or ("empty (" .. tostring(why) .. ")")))
+        TIME.DELAY(50)
+    end
+    local st = DPHY_HS_STATUS()
+    local pm = st.pm and st.pm[1] or 0xFF
+
+    local ok = crc[1] ~= "none" and pm == 0x1C
+    table.insert(result, ok and "Pass" or "Fail")
+    table.insert(result, crc[1])
+    --table.insert(result, string.format("0x%02X", pm))
+    local json_data = cjson.encode(result)
     LOG.INFO(json_data)
-    return 0, json_data
+    LOG.INFO(string.format("F_DPHY_HS_Video_Test %s | CRC CK64 %s | 0Ah %02X",
+        ok and "PASS" or "FAIL", crc[1], pm))
+    pic_sw(DPHY_HS_CFG.FIRST_PIC)
+    DPHY_HS_ON = false
+    CORE.SPI_WRITE(0xD5, 0x00, 0x00, 0x00, 0x00)   -- clock lane LP, I2C works again
+    DMIPI.LP()
+    DMIPI.CMD()                                     -- stop the video stream (DMIPI.VID)
+    bist_mode = 1                                   -- back to VPG mode (PIC_CFG default)
+    TIME.DELAY(20)
+    LOG.INFO(string.format("DPHY_HS_MODE = %s",DPHY_HS_ON))
+    return ok and 0 or 1, json_data
 end
 
-function EFuse_PostTest()
-	local result_table={}
-    -- 初始化寄存器
-    local fields = {}
-    IIC_W_PEQUIN(0x0140, 0x10000000)
-    IIC_W_PEQUIN(0x0148, 0xffffffff)
-    IIC_W_PEQUIN(0x0138, 0x00001909)
-    IIC_W_PEQUIN(0x0000, 0x0010C000)
-    IIC_W_PEQUIN(0x015c, 0x00000011)
-    IIC_W_PEQUIN(0x0164, 0x00000519)
-    TIME.DELAY(10)
-	if TEST_MODE=="MT" then
-	    local val_B5       = 0x9
-		local val_S5       = 0x0
-	    local CRC5_VALUE    = CRC4bit_Calculation(val_B5, val_S5,4, 1)
-	    local val_clk90     = Efuse_90_clk & 0x7
-	    local val_clk270    = Efuse_270_clk & 0x7
-	    local val_data90    = Efuse_90_data & 0x7
-	    local val_data270   = Efuse_270_data & 0x7
-		local CRC_MIPI_TERM = CRC_CRC_Calculation_NEW_4BIT({val_clk90,val_clk270,val_data90,val_data270},CRC_MIPI_TERM)
-		LOG.INFO(string.format("0X%s",val_B5))
-		LOG.INFO(string.format("0X%s",val_S5))
-		LOG.INFO(string.format("0X%s",CRC5_VALUE))
-		LOG.INFO(string.format("0X%s",val_clk90))
-		LOG.INFO(string.format("0X%s",val_clk270))
-		LOG.INFO(string.format("0X%s",val_data90))
-		LOG.INFO(string.format("0X%s",val_data270))
-		LOG.INFO(CRC_MIPI_TERM)
-	    -- 定义所有字段的配置
-	    fields = {
-	        { name = "B5",          value = val_B5,      state=0,  addr = 0xD4,  bits = 4, start_bit = 4 },
-	        { name = "S5",        	value = CRC5_VALUE,  state=0,  addr = 0xDC,  bits = 4, start_bit = 4 },
-	        { name = "CRC5",        value = CRC5_VALUE,  state=0,  addr = 0xDC,  bits = 4, start_bit = 4 },
-	        { name = "clk_term90",  value = val_clk90,   state=0,  addr = 0x190, bits = 3, start_bit = 0 },
-	        { name = "clk_term270", value = val_clk270,  state=0,  addr = 0x193, bits = 3, start_bit = 3 },
-	        { name = "data_term90", value = val_data90,  state=0,  addr = 0x196, bits = 3, start_bit = 6 },
-	        { name = "data_term270",value = val_data270, state=0,  addr = 0x199, bits = 3, start_bit = 1 },
-	        { name = "CRC_MIPI_TERM",value = CRC_MIPI_TERM, state=0,  addr = 0x19C, bits = 4, start_bit = 4 },
-	    }
-	
-	elseif TEST_MODE=="CP2" then
-    -- 准备要写入的值
-	    local IIC_ID = (Color == "Red") and 0x01 or (Color == "Green") and 0x02 or (Color == "Blue") and 0x03 or 0x00
-	    local DAC_MODE = (Color == "Red") and 0 or 1
-	    local DAC_CAL = DAC_cal_trim_step
-	    local Pixel_Current = math.floor(Pixel_Current_uA*1000 / 5)
-	    local DAC_WORD = DAC_word_value
-	    local BANDGAP = Bandgap_code
-	    local TSENSOR_TEMP = 50
-	    local TSENSOR_ADC1Q = tempratue_0p25_code
-	    local TSENSOR_ADC3Q = tempratue_0p75_code
-	    local TSENSOR_CODEA = thermal_sensor0_code
-	    local TSENSOR_CODEB = thermal_sensor1_code
-	    local CRCforDACBlock = CRC8bit_Calculation(Pixel_Current, Pixel_Current)   -- 注意：原代码中 B和S 均为 DAC_POINTA，可能为笔误，但保持原样
-	    local TSENSOR_CRC = CRC8bit_Calculation(TSENSOR_CODEA, TSENSOR_CODEB)
-	    local B3 = 0x09
-	    local S3 = 0x00
-	    local CRC3 = CRC4bit_Calculation(B3, S3, 4, 1)
-	    local LundyuLED = LundyuLED_code   -- 
-	    
-	    local field_names = { "DAC_MODE","DAC_CAL","Pixel_Current","DAC_WORD" }
-		local result = BuildFields(field_names)
-		local CRCforDACBlock = CRC_CRC_Calculation_NEW_8BIT(result,dac_crc_MINLEN)
-		
-		
-	    local field_names={ "BANDGAP","TSENSOR_TEMP","TSENSOR_ADC1Q","TSENSOR_ADC3Q","TSENSOR_CODEA","TSENSOR_CODEB"}
-	    local result = BuildFields(field_names)
-		local CRCforTempSensorBlock = CRC_CRC_Calculation_NEW_8BIT(result,CRC_TEMP_MINLEN)
-	
-	    -- 定义所有字段的配置
-	    fields = {
-	        { name = "IIC_ID",          value = IIC_ID,      state=0,    addr = 0x1F0, bits = 2, start_bit = 0 },
-	        { name = "DAC_MODE",        value = DAC_MODE,    state=0,    addr = 0x100, bits = 1, start_bit = 0 },
-	        { name = "DAC_MODE",        value = DAC_MODE,    state=0,    addr = 0x100, bits = 1, start_bit = 0 },
-	        { name = "DAC_CAL",         value = DAC_CAL,     state=0,    addr = 0x102, bits = 4, start_bit = 2 },
-	        { name = "Pixel_Current",   value = Pixel_Current,  state=0,    addr = 0x110, bits = 12, start_bit = 0 },
-	        { name = "DAC_WORD",  		value = DAC_WORD,  state=0,    addr = 0x11C, bits = 12, start_bit = 4 },
-	        { name = "BANDGAP",         value = BANDGAP,     state=0,   addr = 0x130, bits = 4, start_bit = 0 },
-	        { name = "TSENSOR_TEMP",    value = TSENSOR_TEMP, state=0, addr = 0x13C, bits = 4, start_bit = 4 },
-	        { name = "TSENSOR_ADC1Q",   value = TSENSOR_ADC1Q,state=0, addr = 0x140, bits = 10, start_bit = 0 },
-	        { name = "TSENSOR_ADC3Q",   value = TSENSOR_ADC3Q,state=0, addr = 0x14A, bits = 10, start_bit = 2 },
-	        { name = "TSENSOR_CODEA",   value = TSENSOR_CODEA,state=0, addr = 0x154, bits = 12, start_bit = 4 },
-	        { name = "TSENSOR_CODEB",   value = TSENSOR_CODEB,state=0, addr = 0x160, bits = 12, start_bit = 0 },
-	        { name = "TSENSOR_CRC",     value = TSENSOR_CRC,  state=0, addr = 0x170, bits = 8, start_bit = 0 },
-	        { name = "B3",              value = B3,           state=0, addr = 0x0BC, bits = 4, start_bit = 4 },
-	        { name = "S3",              value = S3,           state=0,  addr = 0x0C0, bits = 4, start_bit = 0 },
-	        { name = "CRC3",            value = CRC3,         state=0,   addr = 0x0C4, bits = 4, start_bit = 4 },
-	        { name = "CRCforDACBlock",  value = CRCforDACBlock, state=0,   addr = 0x128, bits = 8, start_bit = 0 },
-	        { name = "CRCforTempSensorBlock",  value = CRCforTempSensorBlock,    state=0,   addr = 0x170, bits = 8, start_bit = 0 },
-	    }
-	end
-
-    if EFUSE_WRITE == 1 then
-        VQPS(ON)
-        TIME.DELAY(10)
-    end
-
-    -- 统一处理每个字段
-    for i, field in ipairs(fields) do
-        local flag = EFuse_bits_read_TOTAL(field.addr, field.bits, field.start_bit)
-        if flag == 0 then
-            LOG.INFO(string.format("==========Efuse Write %s==========", field.name))
-            fields[i].state=1
-            if EFUSE_WRITE == 1 then
-                efuse_write_TOTAL(field.value, field.addr, field.bits, field.start_bit)
-            end
-        else
-        LOG.INFO(string.format("========== Efuse No Write %s==========",field.name))
-        
-        
-        end
-    end
-    -- 写入完成后关闭 VQPS
-    if EFUSE_WRITE == 1 then
-        VQPS(OFF)
-    end
-
-    -- 重新配置寄存器以读取
-    i3c_write(0x0140, 0x10000000)
-    i3c_write(0x0148, 0xffffffff)
-    i3c_write(0x0138, 0x00001909)
-    i3c_write(0x0000, 0x0010C000)
-    i3c_write(0x015c, 0x00000011)
-    i3c_write(0x0164, 0x00000519)
-    TIME.DELAY(10)
-
-    -- 读取并校验每个字段
-    for i, field in ipairs(fields) do
-        local read_val = EFuse_bits_read_TOTAL(field.addr, field.bits, field.start_bit)
-		if fields[i].state ==1 then
-		   	table.insert(result_table, field.value)
-		    table.insert(result_table, read_val)
-	    	if read_val == field.value then
-	        	table.insert(result_table, 1)
-	        	LOG.INFO(string.format("%s Write success: %d", field.name, field.value))
-	    	else
-	        	table.insert(result_table, 0)
-	        	LOG.ERROR(string.format("Efuse_Write ERROR: %s, write=%d, read=%d", field.name, field.value, read_val))
-	    	end
-	    else
-	    	table.insert(result_table, '')
-		    table.insert(result_table, read_val)
-		    table.insert(result_table, '')
-		end
-    end  
-
-    -- 编码并返回 JSON
-    local json_data = cjson.encode(result_table)
-    LOG.INFO(json_data)
-    return 0, json_data
-end	
-
-function EFuse_bits_read_TOTAL(addressLSB, bitwidth, bitStart)
-	-- Configure eFuse reading
-	
-	local results_table={}
-	local efuse_data = {}
-	local rows_start = math.floor(addressLSB/8) -- rows_start
-	local rows_end = math.ceil((addressLSB+4)/8) -- rows_end
-	-- Read entire eFuse block
-	local n = 0
-	for row = rows_start, rows_end do
-		local read_cmd = 0x00004000 | row -- Read command with row address
-		IIC_W_PEQUIN(0x0154, read_cmd)
-		--wait(10e-6) -- Wait for read to complete
-		TIME.DELAY(10)
-		-- Read eFuse byte from CSR
-		local efuse_byte = IIC_R_PEQUIN(0x0158) & 0xFF
-		efuse_data[n+1] = efuse_byte
-		--println("read efuse_data[%d]=0x%02X",n+1,efuse_data[n+1])
-		n = n+1
-	end
-	local efuse_data_hex = 0
-	--local efuse_data = {0x15}
-	local a = 0
-	for i = 1,#efuse_data do 
-		efuse_data_hex = efuse_data_hex | efuse_data[i] << a *8
-		a = a+1
-		--println("efuse_data_hex：0x%x",efuse_data_hex)
-	end
-	--println("readefuse_data_hex：0x%x",efuse_data_hex) 
-	local mask = 1
-	efuse_data_bin = extract_bits(efuse_data_hex, bitStart, bitwidth)
-	--println("read efuse_data_bin：0x%x",efuse_data_bin) 
-	--println("read efuse_data_bin：0b'%s",toBinary(efuse_data_bin)) 
-	return efuse_data_bin
-end
-
-function  efuse_write_TOTAL(val, addressLSB, bitwidth, bitStart)
-	local efuse_bit = 0
-	local addr_shift = 0
-	local Efuse_data = 0
-	local result=0
-	addressLSB = math.floor(addressLSB/8)
-	
-	println("efuse_write(0x%X,0x%04X,%d,%d)",val, addressLSB, bitwidth, bitStart)
-	for i=0, bitwidth-1 do
-		bit=(val>> i)&1
-		efuse_bit = bitStart + addr_shift
-		
-		if efuse_bit > 7 then
-			addressLSB = addressLSB + 1
-			efuse_bit = 0
-			bitStart = 0
-			addr_shift = 0
-		end
-		addr_shift = addr_shift + 1
-		
-		println("efuse_bit = 0b%s",toBinary(efuse_bit))
-		if bit == 1 then
-		
-			IIC_W_PEQUIN(0x0154, 0x00008000|((efuse_bit << 6) |addressLSB))
-			TIME.DELAY(10)
-		end
-	end
-	return 0
-end
-
-function CRC8bit_Calculation(B, S, reverse)
-    -- 输入：B、S 均为 12 位数据（取低 12 位有效）
-    -- reverse: true 表示 MSB 优先（高位到低位），false 表示 LSB 优先（低位到高位，即 VBA 原方向）
-    -- 1. 提取低12位
-    local B12 = B & 0xFFF
-    local S12 = S & 0xFFF
-    -- 2. 拼接为 24 位数据：S 为高 12 位，B 为低 12 位
-    local data = (S12 << 12) | B12
-    -- 3. 初始化 CRC 寄存器（8 位，索引 0 为 LSB，7 为 MSB）
-    local CRC = {[0]=0, [1]=0, [2]=0, [3]=0, [4]=0, [5]=0, [6]=0, [7]=0}
-    -- 4. 逐位处理（根据 reverse 决定方向）
-    if reverse then
-        -- MSB 优先：从高位到低位（bit23 到 bit0）
-        for iBit = 23, 0, -1 do
-            local bitVal = (data >> iBit) & 1
-            local iInvert = bitVal ~ CRC[7]
-            CRC[7] = CRC[6] ~ iInvert
-            CRC[6] = CRC[5]
-            CRC[5] = CRC[4]
-            CRC[4] = CRC[3] ~ iInvert
-            CRC[3] = CRC[2] ~ iInvert
-            CRC[2] = CRC[1]
-            CRC[1] = CRC[0] ~ iInvert
-            CRC[0] = iInvert
-        end
-    else
-        -- LSB 优先：从低位到高位（bit0 到 bit23），与 VBA 原逻辑一致
-        for iBit = 0, 23 do
-            local bitVal = (data >> iBit) & 1
-            local iInvert = bitVal ~ CRC[7]
-            CRC[7] = CRC[6] ~ iInvert
-            CRC[6] = CRC[5]
-            CRC[5] = CRC[4]
-            CRC[4] = CRC[3] ~ iInvert
-            CRC[3] = CRC[2] ~ iInvert
-            CRC[2] = CRC[1]
-            CRC[1] = CRC[0] ~ iInvert
-            CRC[0] = iInvert
-        end
+-- Every DPHY_HS_PICS image, CRC of each. PASS when:
+--   every image gives a stable CRC,
+--   CRC(DPHY_HS05_CHANNEL) = CRC(reference image of the die colour) (Pinot takes only its own colour byte),
+--   all other images have different CRCs (a stuck data bit / lane makes two patterns look the same).
+-- Die colour = the colour Pinot is set to: from its I2C address 0x60 + Device ID (0 = R, 1 = G, 2 = B).
+-- An unburned die reads Device ID 0 (= R) whatever the wafer colour; the log shows both that and the TP's Color.
+function MIPI_DPHY_HS_Video_Test()
+    if not DPHY_HS_ON and DPHY_HS_VIDEO_ON(DPHY_HS_CFG.FIRST_PIC) ~= 0 then
+    	DPHY_HS_ON = false
+        CORE.SPI_WRITE(0xD5, 0x00, 0x00, 0x00, 0x00)   -- clock lane LP, I2C works again
+        DMIPI.LP()
+        DMIPI.CMD()                                     -- stop the video stream (DMIPI.VID)
+        bist_mode = 1                                   -- back to VPG mode (PIC_CFG default)
+        TIME.DELAY(20)
+        LOG.INFO(string.format("DPHY_HS_MODE = %s",DPHY_HS_ON))
+        return 1, cjson.encode({"Fail", "DPHY_HS_VIDEO_ON"})
     end
     
-    -- 5. 将 CRC 寄存器转换为整数（LSB 对应 bit0）
-    local result = 0
-    for i = 0, 7 do
-        result = result | (CRC[i] << i)
+    LOG.INFO(string.format("DPHY_HS_MODE = %s",DPHY_HS_ON))
+    local result = {}
+    local color = (IIC_CONFIG.SLAVE_ADDR - 0x60) & 0x03
+    local mycol = ({[0] = "R", "G", "B"})[color]
+    local crc, list, bad = {}, {}, {}
+    local crc_temp = {}
+    for _, e in ipairs(DPHY_HS_PICS) do
+        local c, why = crc_of(e[1])
+        crc[e[1]] = c or "none"
+        list[#list + 1] = e[1]
+        LOG.INFO(string.format("  %-26s CRC %s", e[1], c or ("none (" .. tostring(why) .. ")")))
+        if not c then bad[#bad + 1] = e[1] .. ":" .. (why == "load" and "load" or "unstable") end
+        TIME.DELAY(100)
+        --LOG.INFO(string.format("------c = %s",c))
+        --table.insert(result,c)
+        --crc_temp[#crc_temp + 1] = c or "none"
     end
-    return result
-end
-
-
-function CRC4bit_Calculation(B, S, S_len, direction)
-    -- 参数校验
-    local B_4bit = B & 0x0F
-    local s_bit_len = math.max(tonumber(S_len) or 1, 1)
-    local S_valid = tonumber(S) or 0
-
-    -- 拼接数据：B在高位，S在低位
-    local total_bit_len = 4 + s_bit_len
-    local full_data = (B_4bit << s_bit_len) | S_valid
-
-    -- 更新CRC的核心逻辑（对应多项式0x9）
-    local function update_crc(crc, bit_val)
-        local X0 = bit_val ~ crc[3]          -- 输入与当前最高位异或
-        return {
-            [3] = X0 ~ crc[2],               -- 新最高位
-            [2] = crc[1],
-            [1] = crc[0],
-            [0] = X0                          -- 新最低位
-        }
-    end
-
-    -- 初始化CRC寄存器（全0）
-    local CRC = {[0]=0, [1]=0, [2]=0, [3]=0}
-
-    -- 按方向逐位处理
-    if direction == 1 then
-        for bit_idx = total_bit_len - 1, 0, -1 do
-            local bit_val = (full_data >> bit_idx) & 1
-            CRC = update_crc(CRC, bit_val)
+    -- colour channel: CHANNEL image = reference image of the die colour
+    local alias = {}
+    local cp, ref = DPHY_HS_CHANNEL_PIC, DPHY_HS_CHANNEL_REF[mycol or "R"]
+    if crc[cp] then
+        alias[cp] = ref
+        if crc[cp] ~= "none" and crc[ref] and crc[ref] ~= "none" and crc[cp] ~= crc[ref] then
+            bad[#bad + 1] = cp .. "~=" .. ref .. "(colour " .. tostring(mycol) .. ")"
         end
-    else
-        for bit_idx = 0, total_bit_len - 1 do
-            local bit_val = (full_data >> bit_idx) & 1
-            CRC = update_crc(CRC, bit_val)
+        TIME.DELAY(100)
+    end
+    -- all other CRCs must be unique
+    local seen = {}
+    for _, f in ipairs(list) do
+        if not alias[f] and crc[f] ~= "none" then
+            if seen[crc[f]] then bad[#bad + 1] = f .. "==" .. seen[crc[f]] else seen[crc[f]] = f end
         end
     end
-
-    -- 将4位寄存器组合成整数
-    return (CRC[3] << 3) | (CRC[2] << 2) | (CRC[1] << 1) | CRC[0]
+    local ok = #bad == 0 and #list > 0
+    local first = table.concat(bad, " ", 1, math.min(#bad, 5))
+    LOG.INFO(string.format("F_DPHY_HS_Pattern_Test %s | %d images | Pinot colour %s (I2C 0x%02X), TP Color %s | %s",
+        ok and "PASS" or "FAIL", #list, tostring(mycol), IIC_CONFIG.SLAVE_ADDR, tostring(Color),
+        ok and "all CRC checks ok" or (#bad .. " problems: " .. first)))
+    pic_sw(DPHY_HS_CFG.FIRST_PIC)
+     table.insert(result, ok and "Pass" or "Fail")
+     
+    for _, file_name in ipairs(list) do
+     	table.insert(result, crc[file_name])
+    end
+    --table.insert(result, #list)
+    --table.insert(result, #bad)
+    --table.insert(result, first)
+    local json_data  = cjson.encode(result)
+    LOG.INFO(json_data)
+    DPHY_HS_ON = false
+    LOG.INFO(string.format("DPHY_HS_MODE = %s",DPHY_HS_ON))
+    CORE.SPI_WRITE(0xD5, 0x00, 0x00, 0x00, 0x00)   -- clock lane LP, I2C works again
+    DMIPI.LP()
+    DMIPI.CMD()                                     -- stop the video stream (DMIPI.VID)
+    bist_mode = 1                                   -- back to VPG mode (PIC_CFG default)
+    TIME.DELAY(20)
+    return ok and 0 or 1, json_data
 end
 
-function AVEE_RANG_Setting(Avee_value)
-	local avee_value=math.abs(Avee_value)
-	local AVEE_RANG_GLBL=0
-	local AVEE_RANG_DAC=0 
-	if avee_value > 0 and avee_value < 3 then
-		AVEE_RANG_GLBL=0
-	elseif avee_value > 3 and avee_value < 3.5 then
-		AVEE_RANG_GLBL=1
-	elseif avee_value > 3.5 and avee_value < 4 then
-		AVEE_RANG_GLBL=2
-	end
-	if avee_value > 0 and avee_value < 4 then
-		AVEE_RANG_DAC=0
-	elseif avee_value > 4 and avee_value < 5 then
-		AVEE_RANG_DAC=1
-	end
-	return AVEE_RANG_GLBL,AVEE_RANG_DAC
+--F_DPHY_HS_Show()
+-- Production: show image n for the camera (no I2C, so the stream stays clean)
+function F_DPHY_HS_Show(n)
+    n = n or 1
+    if not DPHY_HS_ON and DPHY_HS_VIDEO_ON(DPHY_HS_CFG.FIRST_PIC) ~= 0 then
+        return 1, cjson.encode({"Fail", "DPHY_HS_VIDEO_ON"})
+    end
+    local r = DPHY_HS_IMG(n)
+    TIME.DELAY(DPHY_HS_CFG.PIC_MS)
+    local e = DPHY_HS_PICS[n]
+    LOG.INFO(string.format("------e[1] = %s",e[1]))
+    return r, cjson.encode({r == 0 and "OK" or "Fail", e and e[1] or tostring(n)})
 end
 
+-- No-argument stepping through DPHY_HS_PICS (PIC.SW only), like Next() / Prev() in PIC_CFG
+DPHY_HS_IDX = DPHY_HS_IDX or 1
+local function step(d)
+    if not DPHY_HS_ON then
+        LOG.INFO("DPHY_HS: run DPHY_HS_VIDEO_ON() first")
+        return 1
+    end
+    DPHY_HS_IDX = (DPHY_HS_IDX - 1 + d) % #DPHY_HS_PICS + 1
+    LOG.INFO(string.format("DPHY_HS image %d / %d: %s", DPHY_HS_IDX, #DPHY_HS_PICS, DPHY_HS_PICS[DPHY_HS_IDX][3]))
+    return DPHY_HS_IMG(DPHY_HS_IDX)
+end
+function DPHY_HS_NEXT() return step(1) end
+function DPHY_HS_PREV() return step(-1) end
+
+AVEE_CAP_CFG = AVEE_CAP_CFG or {
+	CHANNEL          = 6,      -- P_AVEE
+	N_SAMPLES        = 10000,  -- used when no duration is passed
+	INTERVAL_MS      = 1,
+	CHANGES_ONLY     = true,   -- store only reads whose value changed (the meter holds ~44 ms)
+	MAX_STORE        = 200000, -- safety limit on stored points (memory); reads continue, storing stops
+	PG_AVG           = nil,    -- nil = keep TAB2 meter averaging; 1 = raw (restored afterwards)
+	SETTLE_MS        = 800,    -- after the pattern is set, before the capture (as DI_TRIM)
+	CMON_OFF         = true,   -- write E3h = 1 (content monitor off) as DI_TRIM does
+	STEP_SHADE       = nil,    -- optional flat-field shade to switch to during the capture
+	STEP_AT_MS       = nil,    -- ... at this time (ms after the first read)
+	SAMPLES_PER_LINE = 50,     -- points per LOG line
+	CSV_PATH         = nil,    -- optional: also write a CSV on the PG file system
+}
+
+local function cap_log_data(tag, ts, cur, n)
+	local per = AVEE_CAP_CFG.SAMPLES_PER_LINE
+	local i = 1
+	while i <= n do
+		local parts = {}
+		local last = math.min(i + per - 1, n)
+		for k = i, last do
+			parts[#parts + 1] = string.format("%d:%.0f", ts[k], cur[k])
+		end
+		LOG.INFO(string.format("AVEECAP,%s,%d,%s", tag, i, table.concat(parts, ";")))
+		i = last + 1
+	end
+end
+
+local function cap_write_csv(path, tag, ts, cur, n)
+	local f = io.open(path, "w")
+	if not f then
+		LOG.ERROR("AVEE_CAPTURE: cannot open " .. tostring(path))
+		return
+	end
+	f:write("tag,index,t_ms,I_nA\n")
+	for k = 1, n do
+		f:write(string.format("%s,%d,%d,%.0f\n", tag, k, ts[k], cur[k]))
+	end
+	f:close()
+	LOG.INFO("AVEE_CAPTURE: CSV written to " .. path)
+end
+
+--AVEE_CAPTURE("Green", 255, "100", 60000)
+function AVEE_CAPTURE(color, shade, tag, duration_ms)
+	local cfg = AVEE_CAP_CFG
+	local ch  = cfg.CHANNEL
+	local dt  = cfg.INTERVAL_MS
+	local n   = cfg.N_SAMPLES
+	if duration_ms ~= nil then
+		n = math.floor(duration_ms / dt) + 1
+	end
+	local changes_only = cfg.CHANGES_ONLY and true or false
+	local max_store = cfg.MAX_STORE or 200000
+	tag = tag or string.format("%s_%s", tostring(color or "asis"), tostring(shade or "asis"))
+
+	-- 1. setup (optional)
+	if cfg.CMON_OFF then
+		IIC_W_Tab2(0xe3, {0x1})  -- Content Monitor Off
+		TIME.DELAY(20)
+	end
+	if color ~= nil then
+		Set_Device_Condition_By_Color(color)
+		TIME.DELAY(20)
+	end
+	if shade ~= nil then
+		VPG_SetFlatField(shade)
+	end
+	if cfg.PG_AVG ~= nil then
+		for i = 0, 8, 1 do
+			POWER.AVG_CYCLE(0, i, cfg.PG_AVG)
+			POWER.AVG_CYCLE(1, i, cfg.PG_AVG)
+		end
+		POWER.COLLECT_SET(cfg.PG_AVG)
+	end
+	if cfg.SETTLE_MS and cfg.SETTLE_MS > 0 then
+		TIME.DELAY(cfg.SETTLE_MS)
+	end
+
+	-- 2. capture: store only, log afterwards (logging inside the loop would wreck the timing)
+	local ts, cur = {}, {}
+	local m = 0                                   -- stored points
+	local reads, mean, m2, mn, mx = 0, 0, 0, math.huge, -math.huge   -- running stats (uA, |I|)
+	local max_gap, t_prev, t_last, c_last = 0, nil, 0, nil
+	local gap_hist = {}                           -- read-interval histogram (ms -> count) for the median
+	local full_warned = false
+	local stepped = (cfg.STEP_SHADE == nil or cfg.STEP_AT_MS == nil)
+	local t_step = -1
+
+	local ok, err = pcall(function()
+		local t0 = TIME.TICK()
+		local prev_c = nil
+		for i = 1, n do
+			local due = t0 + (i - 1) * dt
+			while TIME.TICK() < due do end
+			if not stepped and (due - t0) >= cfg.STEP_AT_MS then
+				t_step = TIME.TICK() - t0
+				VPG_SetFlatField(cfg.STEP_SHADE)
+				stepped = true
+			end
+			local t = TIME.TICK() - t0
+			local _, c = POWER.VOL_CUR(ch)
+
+			-- running statistics over every read (Welford)
+			reads = reads + 1
+			local a = math.abs(c) / 1000
+			local d = a - mean
+			mean = mean + d / reads
+			m2 = m2 + d * (a - mean)
+			if a < mn then mn = a end
+			if a > mx then mx = a end
+			if t_prev ~= nil then
+				local g = t - t_prev
+				if g > max_gap then max_gap = g end
+				gap_hist[g] = (gap_hist[g] or 0) + 1
+			end
+			t_prev = t
+			t_last, c_last = t, c
+
+			-- storage
+			if (not changes_only) or prev_c == nil or c ~= prev_c then
+				if m < max_store then
+					m = m + 1
+					ts[m] = t
+					cur[m] = c
+				elseif not full_warned then
+					full_warned = true
+				end
+			end
+			prev_c = c
+		end
+	end)
+
+	if cfg.PG_AVG ~= nil then
+		power_collect_set()      -- back to the TAB2 meter averaging
+	end
+
+	-- with CHANGES_ONLY, also store the last read so the final hold has an end time
+	if changes_only and reads > 0 and m > 0 and ts[m] ~= t_last and m < max_store then
+		m = m + 1
+		ts[m] = t_last
+		cur[m] = c_last
+	end
+
+	if not ok then
+		LOG.ERROR("AVEE_CAPTURE failed: " .. tostring(err) .. string.format(" after %d reads", reads))
+		if m > 0 then
+			cap_log_data(tag, ts, cur, m)   -- keep what was captured
+		end
+		return 1, cjson.encode({-9999})
+	end
+
+	-- 3. summary
+	local std = (reads > 1) and math.sqrt(m2 / (reads - 1)) or 0
+	local med_gap, acc = 0, 0
+	local keys = {}
+	for g, _ in pairs(gap_hist) do keys[#keys + 1] = g end
+	table.sort(keys)
+	for _, g in ipairs(keys) do
+		acc = acc + gap_hist[g]
+		if acc >= (reads - 1) / 2 then med_gap = g; break end
+	end
+	local med_change = 0
+	if changes_only and m > 2 then
+		local ch_gaps = {}
+		for k = 2, m - 1 do ch_gaps[#ch_gaps + 1] = ts[k] - ts[k - 1] end
+		table.sort(ch_gaps)
+		med_change = ch_gaps[math.floor((#ch_gaps + 1) / 2)]
+	end
+
+	LOG.INFO(string.format(
+		"AVEECAP_HDR,%s,color=%s,shade=%s,ch=%d,n=%d,interval_ms=%d,pg_avg=%s,settle_ms=%d,step_shade=%s,step_at_ms=%d,changes_only=%d",
+		tag, tostring(color), tostring(shade), ch, n, dt, tostring(cfg.PG_AVG or "TAB2"),
+		cfg.SETTLE_MS or 0, tostring(cfg.STEP_SHADE), t_step, changes_only and 1 or 0))
+	cap_log_data(tag, ts, cur, m)
+	LOG.INFO(string.format(
+		"AVEECAP_END,%s,duration_ms=%d,reads=%d,stored=%d,mean_uA=%.3f,min_uA=%.3f,max_uA=%.3f,std_uA=%.3f,median_dt_ms=%d,max_dt_ms=%d,median_change_ms=%d,store_full=%d",
+		tag, t_last, reads, m, mean, mn, mx, std, med_gap, max_gap, med_change, full_warned and 1 or 0))
+	if med_gap > dt then
+		LOG.INFO(string.format("AVEE_CAPTURE: requested %d ms but achieved %d ms per read (meter is slower)", dt, med_gap))
+	end
+	if full_warned then
+		LOG.INFO(string.format("AVEE_CAPTURE: MAX_STORE %d reached, later points not stored (stats still cover all reads)", max_store))
+	end
+	if cfg.CSV_PATH then
+		cap_write_csv(cfg.CSV_PATH, tag, ts, cur, m)
+	end
+
+	return 0, cjson.encode({reads, t_last, mean, mn, mx, std, med_gap, max_gap, m})
+end
+--Ramon
 
 
+--add 2026/11/19 lqs
+g_sweep_csv_seq  = 0
+-- create CSV file for pixel/duty current sweep (same method as F_Save_CSV)
+function F_Save_Current_Sweep_CSV()
+	local Y = os.date("%Y")
+	local MON = os.date("%m")
+	local D = os.date("%d")
+	local timestamp = os.date("%H%M%S")
+	local file_type = "csv"
+	g_sweep_csv_seq = g_sweep_csv_seq + 1
+	local file_name = string.format("C:\\AVEE_CURRENT\\%s\\%s\\%s\\pixel_duty_current_%s_%04d.csv",
+		Y, MON, D, timestamp, g_sweep_csv_seq)
+	local head_Str = "pixel_uA,duty_pct,AVDD_uA,AVEE1_uA\n"
+	LOG.CREAT_FILE(file_id .. "," .. file_type .. "," .. file_name .. "," .. head_Str)
+	LOG.INFO("CSV文件已创建：" .. file_name)
+end
 
+--[[
+Function: Pixel_Duty_Current_Sweep
+Desc: Sweep pixel current (0.1 ~ 4.0 uA, step 0.1) x duty cycle (5 ~ 100 %, step 5).
+      For each condition, sample AVDD (ch 5) and AVEE1 (ch 6) current N times,
+      average them, and save to CSV (same table method as AVEE_current).
+Input:
+    samples : Samples per condition. Default 100.
+Return:
+    1 on success
+--]]
+--Pixel_Duty_Current_Sweep(120)
+function Pixel_Duty_Current_Sweep(samples)
+	if samples == nil then
+		samples = 100
+	end
 
+	local AVDD_CH  = 5   -- AVDD channel (Power.ChannelSetting.AVDD)
+	local AVEE1_CH = 6   -- AVEE1 channel (Power.ChannelSetting.AVEE1)
+
+	local pixel_count = 2  -- 0.2 .. 4.0 uA, step 0.2
+	local duty_count  = 20   -- 1 .. 20 %, step 1
+	
+	POWER.SINGLE_SET(Power.ChannelSetting.AVEE1, 1, 0x85, Power.CONSTANT_VOLTAGE, -5000, Power.OVPSetting.AVEE1,
+		Power.UVPSetting.AVEE1, Power.OCPSetting.AVEE1, Power.UCPSetting.AVEE1, Power.UCPSetting.AVEE1)
+		
+	TIME.DELAY(100)
+	VPG_SetFlatField(255)
+
+	F_Save_Current_Sweep_CSV()
+
+	for pi = 0, pixel_count - 1 do
+		local pixel_uA = math.floor((1.8 + pi * 1.8) * 100 + 0.5) / 100
+		Set_Pixel_Current(pixel_uA)
+
+		for di = 0, duty_count - 1 do
+			local duty_pct = 1+ di * 1
+			Set_Duty_Cycle(90, duty_pct)
+			TIME.DELAY(100)
+
+			local avdd_v, avdd_c = 0, 0
+			local avee_v, avee_c = 0, 0
+			for i = 1, samples do
+				TIME.DELAY(5)
+				local v1, c1 = POWER.VOL_CUR(AVDD_CH)
+				local v2, c2 = POWER.VOL_CUR(AVEE1_CH)
+				avdd_v = avdd_v + v1
+				avdd_c = avdd_c + c1
+				avee_v = avee_v + v2
+				avee_c = avee_c + c2
+			end
+
+			local avdd_uA  = avdd_c / samples / 1000.0  -- nA -> uA
+			local avee1_uA = avee_c / samples / 1000.0  -- nA -> uA
+					
+			g_avdd_uA = avdd_uA
+			g_avee1_uA = avee1_uA
+
+			LOG.INFO(string.format("pixel=%.2fuA duty=%d%% AVDD=%.3fuA AVEE1=%.3fuA",
+				pixel_uA, duty_pct, avdd_uA, avee1_uA))
+
+			Update_CSV(string.format("%.2f,%d,%.3f,%.3f\n",
+				pixel_uA, duty_pct, avdd_uA, avee1_uA))
+		end
+		
+		if g_avdd_uA < 0.001 and  g_avee1_uA < 0.001  then
+				TIME.DELAY(500)
+				DisplayOn()
+				TIME.DELAY(500)
+				POWER.SINGLE_SET(Power.ChannelSetting.AVEE1, 1, 0x85, Power.CONSTANT_VOLTAGE, -5000, Power.OVPSetting.AVEE1,
+							Power.UVPSetting.AVEE1, Power.OCPSetting.AVEE1, Power.UCPSetting.AVEE1, Power.UCPSetting.AVEE1)
+				TIME.DELAY(100)
+				VPG_SetFlatField(255)
+				LOG.DEBUG("-----rePower On")
+		end
+	end
+
+	return 1
+end
 
 

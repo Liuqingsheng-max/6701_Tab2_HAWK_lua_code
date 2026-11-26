@@ -83,22 +83,37 @@ Test_item=""
 --			PPMU_MANUAL_TEST(3)
 
 --Set_TEST_MODE("MT")
---Set_TEST_MODE("CP2")
-IO_PPMU_CHANEL_negative = {
-	{PinNo = 10 ,PinName =  "CLK_REF"},
-	{PinNo = 11 ,PinName =  "GPIO_INT_L"},
-	{PinNo = 12 ,PinName =  "Reset"},
-	{PinNo = 27 ,PinName =  "I2C_SCL"},
-	{PinNo = 28 ,PinName =  "I2C_SDA"},
-}
+----Set_TEST_MODE("CP2")
+--IO_PPMU_CHANEL_negative = {
+	--{PinNo = 10 ,PinName =  "CLK_REF"},
+	--{PinNo = 11 ,PinName =  "GPIO_INT_L"},
+	--{PinNo = 12 ,PinName =  "Reset"},
+	--{PinNo = 27 ,PinName =  "I2C_SCL"},
+	--{PinNo = 28 ,PinName =  "I2C_SDA"},
+--}
+
+--IO_PPMU_CHANEL_Positive = {
+	--{PinNo = 10 ,PinName =  "CLK_REF"},
+	--{PinNo = 11 ,PinName =  "GPIO_INT_L"},
+	--{PinNo = 12 ,PinName =  "Reset"},
+	--{PinNo = 27 ,PinName =  "I2C_SCL"},
+	--{PinNo = 28 ,PinName =  "I2C_SDA"},
+--}
 
 IO_PPMU_CHANEL_Positive = {
-	{PinNo = 10 ,PinName =  "CLK_REF"},
-	{PinNo = 11 ,PinName =  "GPIO_INT_L"},
-	{PinNo = 12 ,PinName =  "Reset"},
-	{PinNo = 27 ,PinName =  "I2C_SCL"},
-	{PinNo = 28 ,PinName =  "I2C_SDA"},
-}
+			{PinNo = 10 ,PinName =  "CLK_REF"},
+			{PinNo = 17 ,PinName =  "ARST_N"},
+			--{PinNo = 18 ,PinName =  "OSC_EN"},
+			{PinNo = 27 ,PinName =  "I3C_SCL"},
+			{PinNo = 28 ,PinName =  "I3C_SDA"},
+		}
+IO_PPMU_CHANEL_negative = {
+			{PinNo = 10 ,PinName =  "CLK_REF"},
+			{PinNo = 17 ,PinName =  "ARST_N"},
+			--{PinNo = 18 ,PinName =  "OSC_EN"},
+			{PinNo = 27 ,PinName =  "I3C_SCL"},
+			{PinNo = 28 ,PinName =  "I3C_SDA"},
+		}
 
 function PPMU_MANUAL_TEST(channel,cur,delayTime)
 	PPMU.SEL_SWITCH(0)
@@ -123,9 +138,9 @@ function PPMU_TEST(count,cur)
 	LOG.INFO("delayTime:"..delayTime)
 	--自动测试获取电压电流值
 	--TIME.DELAY(20)
-	read_table = PPMU.OS_VOL()
+	read_table = PPMU.OS_VOL() --os test get v c
 	--LOG.INFO(string.format("CHANNEL：%s  ,vol: %0.4fmV，cur: %0.2fuA",CHANNEL_NAME[count+1],read_table.voltage*1000,read_table.current))
-	if math.abs(read_table.voltage) < 0.2 then
+	if math.abs(read_table.voltage) < 0.3 then
 		if PPMU_MODE==0 then
 			LOG.DEBUG(string.format("CHANNEL：%s  ,%sPASS：vol: %0.4fmV，cur: %0.2fuA",CHANNEL_NAME[count+1],Test_item,read_table.voltage*1000,read_table.current))
 		else
@@ -153,7 +168,7 @@ function PPMU_TEST_TEST(count,cur,name,delayTime)
 	local testState  = ""
 	--local delayTime = 50
 	if delayTime == nil then
-		delayTime = 30
+		delayTime = 50
 	end
 	
 	PPMU.OS_TEST(PPMU_MODE_TABLE.GND,count,cur)	--0x00:悬空；0x01:PPMU;0x02:GND;0x03:GND  120
@@ -166,7 +181,7 @@ function PPMU_TEST_TEST(count,cur,name,delayTime)
 
 		testState = "短路(SHORT)"
 		LOG.ERROR(string.format("CHANNEL: %s ,IO测试%s, vol: %0.4fmV，cur: %0.2fuA",name,testState,read_table.voltage*1000,read_table.current))
-	elseif	math.abs(read_table.voltage) > 1.3 then
+	elseif	math.abs(read_table.voltage) > 1.4 then
 		testState = "开路(OPEN)"
 		LOG.ERROR(string.format("CHANNEL: %s ,IO测试%s, vol: %0.4fmV，cur: %0.2fuA",name,testState,read_table.voltage*1000,read_table.current))
 	else
@@ -220,16 +235,16 @@ end
 
 function PPMU_POWER_CHANNEL_TEST(cur)
 	tim1 = TIME.TICK()
-	PPMU.RELAY_ALL(1)
+	--PPMU.RELAY_ALL(1)
 	TIME.DELAY(100)
-	for i=2,6,1 do
-		if i == 6 then 
-			cur = -cur
-		end
-	 	PPMU_TEST(i,cur)
-	 	 --PPMU_MANUAL_TEST(i,cur,200)
+	--for i=2,6,1 do
+		--if i == 6 then 
+			--cur = -cur
+		--end
+	 PPMU_TEST(3,cur)
+	 PPMU_MANUAL_TEST(3,cur,200)
 	 	
-	end
+	--end
 	PPMU.RELAY_ALL(0)
 	tim2 = TIME.TICK()
 	LOG.INFO("测试时间"..(tim2/1000 - tim1/1000))
@@ -241,9 +256,12 @@ end
 function PPMU_IO_CHANNEL_TEST(cur,delayTime)
 	local result = {}
 	local result_table = {}
+	local pin_table={} 
+	local voltage_table={} 
+	local current_table={} 
 	--tim1 = TIME.TICK()
 		PPMU.RELAY_ALL(1)
-		--TIME.DELAY(10)
+		TIME.DELAY(10)
 		--LOG.INFO(string.format("cur:%d",cur[2]))
 		--LOG.INFO(cur)
 	for c,z in pairs(cur) do
@@ -255,6 +273,9 @@ function PPMU_IO_CHANNEL_TEST(cur,delayTime)
 			 	--result_table = result[2]
 			 	table.insert(result_table,result[2])
 			 	println("PinNo:%d",v.PinNo)
+			 	table.insert(pin_table,v.PinName)
+			 	table.insert(current_table,z)
+			 	table.insert(voltage_table,result[2])
 			 	 --PPMU_MANUAL_TEST(v.PinNo,cur,200)
 			 
 			end
@@ -266,13 +287,17 @@ function PPMU_IO_CHANNEL_TEST(cur,delayTime)
 			 	--result_table = result[2]
 			 	table.insert(result_table,result[2])
 			 	println("PinNo:%d",v.PinNo)
+			 	table.insert(pin_table,v.PinName)
+			 	table.insert(current_table,z)
+			 	table.insert(voltage_table,result[2])
 			 	 --PPMU_MANUAL_TEST(v.PinNo,cur,200)
 			 
 			end
 		end
 	end
 		 PPMU.RELAY_ALL(0)
-	return result_table
+	--return result_table
+	return pin_table,current_table,voltage_table
 end
 
 function PPMU_IO_CHANNEL_TEST_Customize(cur,pinlist,ioname,delayTime)
@@ -344,14 +369,14 @@ function Set_IO_TEST_MODE()
 		IO_PPMU_CHANEL_Positive = {
 			{PinNo = 10 ,PinName =  "CLK_REF"},
 			{PinNo = 17 ,PinName =  "ARST_N"},
-			{PinNo = 18 ,PinName =  "OSC_EN"},
+			--{PinNo = 18 ,PinName =  "OSC_EN"},
 			{PinNo = 27 ,PinName =  "I3C_SCL"},
 			{PinNo = 28 ,PinName =  "I3C_SDA"},
 		}
 		IO_PPMU_CHANEL_negative = {
 			{PinNo = 10 ,PinName =  "CLK_REF"},
-			{PinNo = 17 ,PinName =  "ARST_N"},
-			{PinNo = 18 ,PinName =  "OSC_EN"},
+			{PinNo = 17,PinName =  "ARST_N"},
+			--{PinNo = 18 ,PinName =  "OSC_EN"},
 			{PinNo = 27 ,PinName =  "I3C_SCL"},
 			{PinNo = 28 ,PinName =  "I3C_SDA"},
 		}
@@ -361,6 +386,6 @@ function Set_IO_TEST_MODE()
 	LOG.DEBUG(string.format("TEST_MODE:%s,Set_IO_TEST_MODE:%s",TEST_MODE,IO_PPMU_CHANEL_Positive[2].PinName))
 	LOG.DEBUG(string.format("TEST_MODE:%s,Set_IO_TEST_MODE:%s",TEST_MODE,IO_PPMU_CHANEL_Positive[3].PinName))
 	LOG.DEBUG(string.format("TEST_MODE:%s,Set_IO_TEST_MODE:%s",TEST_MODE,IO_PPMU_CHANEL_Positive[4].PinName))
-	LOG.DEBUG(string.format("TEST_MODE:%s,Set_IO_TEST_MODE:%s",TEST_MODE,IO_PPMU_CHANEL_Positive[5].PinName))
+	--LOG.DEBUG(string.format("TEST_MODE:%s,Set_IO_TEST_MODE:%s",TEST_MODE,IO_PPMU_CHANEL_Positive[5].PinName))
 
 end

@@ -31,7 +31,7 @@ end
 
 
 function F_THIRD_CMD_PROCESS(cmdChar, ...)
-    -- 参数类型校验
+    -- Parameter Type Check
     local paramTable = {...}
     if type(cmdChar) ~= "string" then
         LOG.ERROR(string.format("参数类型错误: cmdChar应为字符串，实际为 %s", type(cmdChar)))
@@ -44,7 +44,7 @@ function F_THIRD_CMD_PROCESS(cmdChar, ...)
     end
     --LOG.DEBUG(string.format("收到命令: %s, 参数数量: %d", cmdChar, #paramTable))
     
-    -- 检查命令是否存在
+    -- Check if the command exists
     local func = ThirdPartyMap[cmdChar]
     if not func then
         LOG.ERROR(string.format("未知命令: %s", cmdChar))
@@ -59,15 +59,15 @@ function F_THIRD_CMD_PROCESS(cmdChar, ...)
     	status=1
     end
     --LOG.DEBUG(redata[1])
-    local len, data=processListOptimized(redata)--计算长度,数据处理
+    local len, data=processListOptimized(redata)--Calculate length, data processing
 	--LOG.DEBUG(status.."---"..data)
-	return status, data--状态，"长度，数据"
+	return status, data--Status, "Length, Data"
 end
 
---拼接字符串“长度，数据”
+--Concatenate string "Length, Data"
 function processListOptimized(list)
 
-    -- 处理空列表的特殊情况
+    -- Handle special case of empty list
     if list == nil then
         return 0, "0"
     end
@@ -75,8 +75,8 @@ function processListOptimized(list)
     local count = #list
     local strList = {}
     
-    -- 将所有元素转为字符串并存入新表
-	-- 从第二个元素开始遍历
+    -- Convert all elements to strings and store in a new list
+	-- Iterate starting from the second element
 	for i = 1, #list+1 do
 		if i==1 then
 			strList[i] = tostring(count)
@@ -87,18 +87,18 @@ function processListOptimized(list)
 	    ::continue::
 	end
 	
-    -- 使用 table.concat 高效拼接字符串
+    -- Use table.concat for efficient string concatenation
     local result = table.concat(strList, ",")
     
     return count, result
 end
 
--- 解析字符串数据
--- @param data 待解析的字符串，格式如 "15,62,33"
--- @return table 解析后的数值数组
--- @return number 数据个数
+-- Parse string data
+-- @param data String to be parsed, format e.g. "15,62,33"
+-- @return table Parsed numeric array
+-- @return number Number of data elements
 function parseCommaSeparatedData(data)
-    -- 处理空值或无效输入
+    -- Handle null or invalid input
     if not data or type(data) ~= "string" or data == "" then
         return {0}, 0
     end
@@ -106,12 +106,12 @@ function parseCommaSeparatedData(data)
     local table = {}
     local count = 0
     
-    -- 使用 string.gmatch 分割字符串
+    -- Split string using string.gmatch
     for value in string.gmatch(data, "[^,]+") do
         count = count + 1
-        -- 尝试将每个值转换为数值（如果是数值格式）
+        -- Attempt to convert each value to a number (if in numeric format)
         local num = tonumber(value)
-        table[count] = num ~= nil and num or value  -- 转换失败则保留原始字符串
+        table[count] = num ~= nil and num or value  -- If conversion fails, keep the original string
     end
     return table, count
 end
@@ -129,7 +129,7 @@ function toSINT(_i, _len)
 	return _o
 end
 
---自定义函数：将十进制数转为8位二进制字符串
+--Custom function: Convert decimal number to 8-bit binary string
 --function toBinary(num)
 	--local bin=""
 	--for i=7,0,-1 do
@@ -137,7 +137,7 @@ end
 	--end
 	--return bin
 --end
---转二进制格式
+--Convert to binary format
 function toBinary(n)
 	if n == 0 then return "0" end
 	local bin = ""
@@ -148,53 +148,53 @@ function toBinary(n)
 	return bin
 end
 
---print(toBinary(42))  -- 输出: 101010
+--print(toBinary(42))  -- output: 101010
 
---提取指定长度的二进制
+--Extract binary of specified length
 function extract_bits(num, start_bit, length)
-    -- 创建掩码，提取指定长度的位
+    -- Create a mask to extract bits of specified length
     local mask = (1 << length) - 1
-    -- 右移到位，然后应用掩码
+    -- Shift right by bits, then apply the mask
     return (num >> start_bit) & mask
 end
 
--- 2进制字符串转10进制数值（含异常处理）
--- 参数：bin_str（2进制字符串）、default（转换失败时的默认值，可选）
+-- Binary string to decimal value (with error handling)
+-- Binary string to decimal (with optional default value)
 -- 返回：10进制数值 或 默认值
 function bin_to_decimal(bin_str, default)
-    -- 先判断输入是否为字符串（避免非字符串类型报错）
+    -- Check whether the input is a string first (to avoid errors from non-string types)
     if type(bin_str) ~= "string" then
         return default or nil
     end
     
-    -- 调用 tonumber 转换，base=2（仅解析 0/1 字符）
+    -- Call tonumber for conversion, base=2 (only parses 0/1 characters)
     local decimal = tonumber(bin_str, 2)
-    -- 转换失败返回默认值，成功返回结果
+    -- Return default value on failure, return result on success
     return decimal ~= nil and decimal or (default or nil)
 end
 
---将时间戳转换成时间格式
+--Convert timestamp to time format
 function timestampToDateTime(MODE,timestamp, isUTC)
 	if isUTC then
 		if MODE == 0 then
-			return os.date("!%Y", timestamp) --加！获取UTC时区时间
+			return os.date("!%Y", timestamp) --Get UTC time
 		elseif MODE == 1 then
-			return os.date("!%m", timestamp) --加！获取UTC时区时间
+			return os.date("!%m", timestamp) --Get UTC time
 		elseif MODE == 2 then
-			return os.date("!%d", timestamp) --加！获取UTC时区时间
+			return os.date("!%d", timestamp) --Get UTC time
 		end
 		
 	else
-	   return os.date("%Y-%m-%d %H:%M:%S", timestamp)  --不加加！获取本地的时区
+	   return os.date("%Y-%m-%d %H:%M:%S", timestamp)  --Remove ! to get local time
 	end
    
 end
--- 测试
+-- Test
 --local ts = 1660261783
 --println("UTC时间:", timestampToDateTime(ts, true))
 --println("本地时间:", timestampToDateTime(ts, false))
 
--- 输出结果：
+-- Output result：
 -- timestamp Code: 1660261783
 -- 2022-08-11 23:49:43
 
@@ -721,21 +721,21 @@ ADDP =
 
 
 function isInRange(a, b, range)
-    -- 处理基准值为0的特殊情况
+    -- Handle the special case where the base value is 0
     if a == 0 then
         return b == 0
     end
     
-    -- 计算允许的浮动范围
+    -- Calculate the allowable floating range
     local minVal = a * (1 - range)
     local maxVal = a * (1 + range)
     
-    -- 关键修复：确保 minVal <= maxVal（无论a是正数还是负数）
+    -- Critical fix: Ensure minVal <= maxVal (whether a is positive or negative)
     if minVal > maxVal then
         minVal, maxVal = maxVal, minVal  -- 交换两个值
     end
     --LOG.INFO(string.format("minVal:%f,maxVal:%f,b:%f",minVal,maxVal,b))
-    -- 检查b是否在调整后的范围内
+    -- Check if b is within the adjusted range
     return b >= minVal and b <= maxVal
 end
 
@@ -744,7 +744,7 @@ function F_CLK_OUT(CLK)
 	MCU.CHANNEL_LEVEL(2,1,1.80)--gpio 1.8V
 	PPMU.PIXEL_EN(1) --CLK_OUT EN
 	Pre_Clk=CLK
-	DEDP.SI5351_SET(CLK*1000*1000,5)--50M
+	DEDP.SI5351_SET(CLK*1000*1000,5)--12.5M
 --DEDP.SI5351_SET(64*1000*1000,5)--64M
 end
 function F_CLK_CLOSE()
@@ -753,45 +753,58 @@ function F_CLK_CLOSE()
 	DEDP.SI5351_SET(0,0)--50M
 --DEDP.SI5351_SET(64*1000*1000,5)--64M
 end
-function F_CLK_IN_TEST()
-	PPMU.PIXEL_IN(1)--CLK_OUT EN
-	local Real_Clk1 = DEDP.GET_FRQ(1)/1000000
-	local Real_Clk2 = DEDP.GET_FRQ(2)/1000000
-	if (isInRange(Pre_Clk, Real_Clk1*2, 0.1)) then
-		LOG.DEBUG(string.format("CLK_IN1_TEST-->PASS,CLK_OUT-->%.3fMHZ CLK_IN-->%.3fMHZ",Pre_Clk,Real_Clk1*2))
-	else
-		LOG.ERROR(string.format("CLK_IN1_TEST-->NG,CLK_OUT-->%.3fMHZ CLK_IN-->%.3fMHZ",Pre_Clk,Real_Clk1*2))
-	end
+--function F_CLK_IN_TEST()
+	--PPMU.PIXEL_IN(1)--CLK_OUT EN
+	--local Real_Clk1 = DEDP.GET_FRQ(1)/1000000
+	--local Real_Clk2 = DEDP.GET_FRQ(2)/1000000
+	--if (isInRange(Pre_Clk, Real_Clk1*2, 0.1)) then
+		--LOG.DEBUG(string.format("CLK_IN1_TEST-->PASS,CLK_OUT-->%.3fMHZ CLK_IN-->%.3fMHZ",Pre_Clk,Real_Clk1*2))
+	--else
+		--LOG.ERROR(string.format("CLK_IN1_TEST-->NG,CLK_OUT-->%.3fMHZ CLK_IN-->%.3fMHZ",Pre_Clk,Real_Clk1*2))
+	--end
 	
-	if (isInRange(Pre_Clk, Real_Clk2*8, 0.1)) then
-		LOG.DEBUG(string.format("CLK_IN2_TEST-->PASS,CLK_OUT-->%.3fMHZ CLK_IN-->%.3fMHZ",Pre_Clk,Real_Clk2*8))
-	else
-		LOG.ERROR(string.format("CLK_IN2_TEST-->NG,CLK_OUT-->%.3fMHZ CLK_IN-->%.3fMHZ",Pre_Clk,Real_Clk2*8))
-	end
---DEDP.SI5351_SET(64*1000*1000,5)--64M
+	--if (isInRange(Pre_Clk, Real_Clk2*8, 0.1)) then
+		--LOG.DEBUG(string.format("CLK_IN2_TEST-->PASS,CLK_OUT-->%.3fMHZ CLK_IN-->%.3fMHZ",Pre_Clk,Real_Clk2*8))
+	--else
+		--LOG.ERROR(string.format("CLK_IN2_TEST-->NG,CLK_OUT-->%.3fMHZ CLK_IN-->%.3fMHZ",Pre_Clk,Real_Clk2*8))
+	--end
+----DEDP.SI5351_SET(64*1000*1000,5)--64M
 
-end
+--end
 
+--function F_MIPI_WRITE(reg,data)
+    --local ret = 0;
+	--reg_table = {reg&0xff , (reg >> 8)&0xff}
+    ----local regTab = {(reg) & 0xff,reg  & 0xff}
+    ----local dataValue = data
+    --local dataTab = {data  & 0xff,(data >> 8) & 0xff,(data >> 16) & 0xff,(data >> 24) & 0xff}
+
+    --DMIPI.REG_W(0x29,reg_table[2],reg_table[1], table.unpack(dataTab))
+    ----println("DMIPI.REG_W(0x29,0x%02X,0x%02X,0x0d,0x00,0x%02X,0x%02X,0x%02X,0x%02X)",regTab[2],regTab[1],table.unpack(dataTab))
+
+    --return ret
+--end
 function F_MIPI_WRITE(reg,data)
-    local ret = 0;
-
-    local regTab = {(reg >> 8) & 0xff,reg  & 0xff}
-    local dataValue = data
+    local ret = 0
+	
+	local Reg = reg
+    --local regTab = {(reg) & 0xff,reg  & 0xff}
+    --local dataValue = data
     local dataTab = {data  & 0xff,(data >> 8) & 0xff,(data >> 16) & 0xff,(data >> 24) & 0xff}
 
-    DMIPI.REG_W(0x29,regTab[2],regTab[1],0x0d,0x00,table.unpack(dataTab))
-    println("DMIPI.REG_W(0x29,0x%02X,0x%02X,0x0d,0x00,0x%02X,0x%02X,0x%02X,0x%02X)",regTab[2],regTab[1],table.unpack(dataTab))
+    DMIPI.REG_W(0x39,Reg,table.unpack(dataTab))
+    --println("DMIPI.REG_W(0x29,0x%02X,0x%02X,0x0d,0x00,0x%02X,0x%02X,0x%02X,0x%02X)",regTab[2],regTab[1],table.unpack(dataTab))
 
-    return ret;
+    return ret
 end
 function F_READ_FOR_MIPI(addr, length)
 	DMIPI.LP()
-    -- 参数校验
+    -- Parameter validation
     if length <= 0 or length > 255 then
         error("Invalid length (1-255 bytes supported)")
     end
 
-    -- 发送读取命令（addr: 32bit, length: 1-4 bytes）
+    -- Send read command（addr: 32bit, length: 1-4 bytes）
     DMIPI.REG_W(0x29, 0xFF, 
         (addr >> 24) & 0xFF,  -- addr[31:24]
         (addr >> 16) & 0xFF,  -- addr[23:16]
@@ -799,22 +812,22 @@ function F_READ_FOR_MIPI(addr, length)
         length                -- 读取长度
     )
 
-    -- 可选延迟（根据硬件需求调整）
+    -- Optional delay (adjust according to hardware requirements)
     -- TIME.DELAY(200)
 
-    -- 读取数据（返回字节数组）
-    local read_data = DMIPI.REG_R((addr >> 8) & 0xFF, length)
+    -- Read data (returns byte array)
+    local read_data = DMIPI.REG_R(addr & 0xFF, length)
 
-    -- 动态拼接返回值（根据length决定数据宽度）
+    -- Dynamically concatenate the return value (data width determined by length)
     local result = 0
     for i = 1, length do
         result = result | ((read_data[i] & 0xFF) << (8 * (i - 1)))
     end
 
-    -- 调试日志（可选）
+    -- Debug log (optional)
     -- LOG.INFO(string.format("Read 0x%X: 0x%X (length=%d)", addr, result, length))
 
-    return result  -- 返回数值（非G_value）
+    return result  -- Return value	（非G_value）
 end
 
 function Set_Color_IIC_SlaveAddr(color)
@@ -827,52 +840,7 @@ function Set_Color_IIC_SlaveAddr(color)
 	end 
 	IIC_CONFIG.init_default()
 end
---Set_Color("G")
---function Set_Color(color)
-	--Color = color == nil  and Color or color
-	----Set_Color_Power(PowerCfg_B)
-	--local results_table={}
-	
-	--if Color =="R" then
-		--Color = "Red"
-		--Power.ValueSetting.AVEE1 = -1800
-		----Set_Color_Test_Item(Color)
-		--IIC_CONFIG.SLAVE_ADDR =IIC_SLV_R
-		
-		--table.insert(results_table,Power.ValueSetting.AVEE1)
-		--table.insert(results_table,IIC_CONFIG.SLAVE_ADDR)
-		----Set_Color_IIC_SlaveAddr(Color)
-	--elseif Color =="G" then
-		--Color = "Green"
-		--Power.ValueSetting.AVEE1 = -2500
-		--IIC_CONFIG.SLAVE_ADDR =IIC_SLV_G
-		
-		--table.insert(results_table,Power.ValueSetting.AVEE1)
-		--table.insert(results_table,IIC_CONFIG.SLAVE_ADDR)
-		----Set_Color_Power(PowerCfg_G)
-		----Set_Color_Test_Item(Color)
-		----Set_Color_IIC_SlaveAddr(Color)
-	--elseif Color == "B" then
-		--Color = "Blue"
-		--Power.ValueSetting.AVEE1 = -2500
-		--IIC_CONFIG.SLAVE_ADDR =IIC_SLV_B
-		
-		--table.insert(results_table,Power.ValueSetting.AVEE1)
-		--table.insert(results_table,IIC_CONFIG.SLAVE_ADDR)
-		----Set_Color_Test_Item(Color)
-		----Set_Color_IIC_SlaveAddr(Color)
-	----else
-		----Color = "Blue"
-		----Power.ValueSetting.AVEE1 = -2500
-		------Set_Color_Test_Item(Color)
-		----Set_Color_IIC_SlaveAddr(Color)
-	--end
-	--IIC_CONFIG.init_default()
-	--local json_data = cjson.encode(results_table)
-	--LOG.INFO(json_data)
-    --return 0,json_data
---end
---20260122 add
+
 --Set_Color("R")
 function Set_Color(color)
 	Color = color == nil  and Color or color
@@ -881,39 +849,38 @@ function Set_Color(color)
 	
 	if Color =="R" then
 		Color = "Red"
-		Power.ValueSetting.AVEE1 = -1800
+		Power.ValueSetting.AVEE1 = -2500  
 		--Set_Color_Test_Item(Color)
 		IIC_CONFIG.SLAVE_ADDR =IIC_SLV_R
-		I3C_CONFIG.SLAVE_ADDR =IIC_SLV_R
-		DAC_CTRL_value=0x50111
+		DAC_CTRL_value=0x50011
 		table.insert(results_table,Power.ValueSetting.AVEE1)
 		table.insert(results_table,IIC_CONFIG.SLAVE_ADDR)
 		--Set_Color_IIC_SlaveAddr(Color)
 	elseif Color =="G" then
 		Color = "Green"
-		Power.ValueSetting.AVEE1 = -3000
+		Power.ValueSetting.AVEE1 = -2500  --(Temporary write)
 		IIC_CONFIG.SLAVE_ADDR =IIC_SLV_G
-		I3C_CONFIG.SLAVE_ADDR =IIC_SLV_G
-		DAC_CTRL_value=0x50011
+		DAC_CTRL_value=0x50111
 		table.insert(results_table,Power.ValueSetting.AVEE1)
 		table.insert(results_table,IIC_CONFIG.SLAVE_ADDR)
+		--Set_Color_Power(PowerCfg_G)
+		--Set_Color_Test_Item(Color)
+		--Set_Color_IIC_SlaveAddr(Color)
 	elseif Color == "B" then
 		Color = "Blue"
-		Power.ValueSetting.AVEE1 = -3000
+		Power.ValueSetting.AVEE1 = -2500  --(Temporary write)
 		IIC_CONFIG.SLAVE_ADDR =IIC_SLV_B
-		I3C_CONFIG.SLAVE_ADDR =IIC_SLV_B
-		DAC_CTRL_value=0x50011
+		DAC_CTRL_value=0x50111
 		table.insert(results_table,Power.ValueSetting.AVEE1)
 		table.insert(results_table,IIC_CONFIG.SLAVE_ADDR)
+		--Set_Color_Test_Item(Color)
+		--Set_Color_IIC_SlaveAddr(Color)
+	--else
+		--Color = "Blue"
+		--Power.ValueSetting.AVEE0 = -2500
+		----Set_Color_Test_Item(Color)
+		--Set_Color_IIC_SlaveAddr(Color)
 	end
-	
-	LOG.INFO(TEST_MODE) 
-	if TEST_MODE == "CP2" then
-		IIC_CONFIG.SLAVE_ADDR =IIC_SLV_Defaul
-		I3C_CONFIG.SLAVE_ADDR =IIC_SLV_Defaul  
-	end
-	
-	IIC_SLAVE_ADDR_TAB[2]=IIC_CONFIG.SLAVE_ADDR 
 	IIC_CONFIG.init_default()
 	local json_data = cjson.encode(results_table)
 	LOG.INFO(json_data)
@@ -937,11 +904,11 @@ function CombineEfuseToHexStr(byteArray)
         return nil
     end
 
-    local hexStr = ""  -- 存储最终拼接的十六进制字符串
+    local hexStr = ""  -- Store the final concatenated hexadecimal string
     local isValid = true
 
     for i = 1, #byteArray do
-        -- 提取当前字节值并校验（必须是0-255的有效字节）
+        -- Extract and validate current byte value (must be a valid byte between 0-255)
         local byteVal = tonumber(byteArray[i])
         if not byteVal or byteVal < 0 or byteVal > 255 then
             LOG.ERROR(string.format("CombineEfuseToHexStr错误：第%d个元素无效（值=%s，需0-255）", 
@@ -960,7 +927,7 @@ function CombineEfuseToHexStr(byteArray)
 end
 
 function ExtractBitsFromHex(hexStr, startBit, endBit)
-    -- 参数类型检查
+    -- Parameter type check
     if type(hexStr) ~= "string" then
         LOG.ERROR("ExtractBitsFromHex错误：hexStr不是字符串")
         return nil
@@ -970,19 +937,19 @@ function ExtractBitsFromHex(hexStr, startBit, endBit)
         return nil
     end
 
-    -- 去除可能的0x/0X前缀
+    -- Remove possible 0x/0X prefix
     local hex = hexStr:gsub("^[0xX][xX]?", "")
     if hex == "" then
         LOG.ERROR("ExtractBitsFromHex错误：hexStr为空")
         return nil
     end
 
-    -- 补全为偶数位（每两个字符一个字节）
+    -- Pad to even length (one byte per two characters)
     if #hex % 2 == 1 then
         hex = "0" .. hex
     end
 
-    -- 将十六进制字符串转换为字节数组（高位在前）
+    -- Convert hex string to byte array (big-endian / high byte first)
     local bytes = {}
     for i = 1, #hex, 2 do
         local byteStr = hex:sub(i, i+1)
@@ -995,30 +962,30 @@ function ExtractBitsFromHex(hexStr, startBit, endBit)
     end
 
     local totalBits = #bytes * 8
-    -- 校验位范围
+    -- Checksum range
     if startBit < 0 or endBit < 0 or startBit > endBit or endBit >= totalBits then
         LOG.ERROR(string.format("ExtractBitsFromHex错误：位范围无效 startBit=%d endBit=%d totalBits=%d", startBit, endBit, totalBits))
         return nil
     end
 
-    -- 构建提取位的二进制字符串（从高位到低位，即 endBit → startBit）
+    -- Construct binary string for bit extraction (from high bit to low bit, i.e., endBit → startBit)
     local bitStr = ""
     for bitPos = endBit, startBit, -1 do
-        -- 计算字节索引：字节数组高位在前，bitPos=0 对应最后一个字节
+        -- Construct binary string for bit extraction (from high bit to low bit, i.e., endBit → startBit)
         local byteIdx = #bytes - math.floor(bitPos / 8)
         local bitOff = bitPos % 8
         local bitVal = (bytes[byteIdx] >> bitOff) & 1
         bitStr = bitStr .. tostring(bitVal)
     end
 
-    -- 检查提取的位数是否超过Lua数字的精确表示范围（最大53位）
+    -- Check if extracted bits exceed Lua's precise numeric range (max 53 bits)
     local bitLen = #bitStr
     --if bitLen > 53 then
         --LOG.ERROR(string.format("ExtractBitsFromHex错误：提取的位数 %d 超过53位，可能精度丢失", bitLen))
         --return nil
     --end
 
-    -- 将二进制字符串转换为数字
+    -- convert binary string to number
     local num = tonumber(bitStr, 2)
     if not num then
         LOG.ERROR("ExtractBitsFromHex错误：二进制转换失败")
