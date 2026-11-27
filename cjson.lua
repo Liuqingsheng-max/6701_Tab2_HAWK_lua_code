@@ -1,4 +1,5 @@
 -- Simple Lua JSON Library
+--update 2026/11/27
 local M = {}
 
 -- Encode function: Converts Lua data into a JSON string
