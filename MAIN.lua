@@ -21,9 +21,7 @@ package.loaded["POWER_CFG"]   = nil
 package.loaded["SIGNAL_CFG"]  = nil
 package.loaded["IC"]          = nil
 package.loaded["TEST_API"] = nil
---package.loaded["BIST_9_POINT"]	  = nil
 package.loaded["cjson"]       = nil
---package.loaded["DEMURA"]       = nil
 package.loaded["Update_Log"]  = nil
 package.loaded["DI_TRIM_Pinot"] = nil
 
@@ -39,7 +37,6 @@ require "SIGNAL_CFG"
 require "IC"
 require "TEST_API"
 require "DI_TRIM_Pinot"
---require "DEMURA"
 require "Update_Log"
 
 cjson = require "cjson"
