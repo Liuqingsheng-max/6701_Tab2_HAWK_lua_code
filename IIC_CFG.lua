@@ -48,13 +48,20 @@ LOG.INFO("IIC_INITchushihua")
 
 
 function IIC_W_Tab2(addr,data)
-	IIC_Key_Set()
+	IIC.WRITE(0x60, {0xF0}, {0x5a,0x5a}) 
+	IIC.WRITE(0x60, {0xF1}, {0x5a,0x5a})
+	IIC.WRITE(0x60, {0xFc}, {0x5a,0x5a})
 	addr_S = addr
 	data_S = data
 	local addr_buf = { addr&0xFF}
 	local payload
 
-	if type(data) == "number" then
+	if data == nil then
+		-- 仅命令字节，无数据（DCS 命令，如 0x11 Sleep Out / 0x29 Display On）
+		IIC.WRITE(IIC_CONFIG.SLAVE_ADDR, addr_buf)
+		return 0
+	
+	elseif type(data) == "number" then
 		-- 传入32位数字
 		--payload = {data&0xFF,(data>>8)&0xFF,(data>>16)&0xFF,(data>>24)&0xFF}
 		payload = {(data>>24)&0xFF,(data>>16)&0xFF,(data>>8)&0xFF,data&0xFF}
@@ -76,7 +83,9 @@ end
 
 function IIC_R_Tab2(addr,data_len)
 
-	IIC_Key_Set()
+	IIC.WRITE(0x60, {0xF0}, {0x5a,0x5a}) 
+	IIC.WRITE(0x60, {0xF1}, {0x5a,0x5a})
+	IIC.WRITE(0x60, {0xFc}, {0x5a,0x5a})
 	local addre = {addr&0xFF}
 	local ReadData = IIC.READ(IIC_CONFIG.SLAVE_ADDR, addre, data_len)
 	local byte_str = ""

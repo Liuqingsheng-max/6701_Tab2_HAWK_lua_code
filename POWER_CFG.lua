@@ -530,10 +530,10 @@ end
 
 
 function SLEEP_OUT()
-	IIC.WRITE(0x60,{0x11})   --sleep OUT
-	--IIC_W_Tab2(0x60,{0x11})
+	IIC_W_Tab2(0x11)
 	LOG.INFO("Sleep out")
 end
+
 
 
 function Get_ALL_POWER()

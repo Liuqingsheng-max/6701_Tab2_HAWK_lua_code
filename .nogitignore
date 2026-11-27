@@ -1,0 +1,105 @@
+# VCS
+.git/
+.nogit/
+
+# Python
+.venv/
+venv/
+env/
+.env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+*.egg/
+.tox/
+.eggs/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Node / JS / TS
+node_modules/
+.npm/
+.yarn/
+*.min.js
+*.min.css
+.next/
+.nuxt/
+.svelte-kit/
+out/
+.parcel-cache/
+.cache/
+
+# Rust
+target/
+
+# C / C++
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.exe
+*.out
+*.pdb
+*.ilk
+*.exp
+
+# C# / .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.nupkg
+_ReSharper*/
+
+# Java / Kotlin
+*.class
+*.jar
+*.war
+*.aar
+.gradle/
+gradle/
+gradlew
+gradlew.bat
+
+# Go
+vendor/
+*.test
+go.sum
+
+# Build générique
+dist/
+build/
+out/
+release/
+debug/
+
+# Logs & temp
+*.log
+*.tmp
+*.temp
+*.swp
+*.bak
+Thumbs.db
+.DS_Store
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+Cargo.lock
+poetry.lock
+Pipfile.lock
+composer.lock
+
+# IDE
+.idea/
+.vscode/
+*.iml
