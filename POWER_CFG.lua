@@ -364,7 +364,8 @@ function AVEE1_OUT_V(vol)
 end
 --Set_Power(5,800)
 function Set_Power(channel,vol,range,voltage_clamp,current_clamp)
-	RANGE = (range == nil) and Power.MEDIUM_RANGE or range
+	local RANGE = (range == nil) and Power.MEDIUM_RANGE or range
+	local CHAN_NAME = ({ "SMU1","SMU2","VQPS","VDDIO","DVDD","AVDD","AVEE1","AVEE2","AVEE3" })[channel + 1]
 	local EN=0
 	if vol~=0 then
 		EN=1
@@ -420,11 +421,11 @@ function Set_Power(channel,vol,range,voltage_clamp,current_clamp)
 		Power.ValueSetting.AVEE1=vol
 	end
 
-	POWER.SINGLE_SET(channel, EN, RANGE, Power.CONSTANT_VOLTAGE , vol, voltage_clamp, Power.UVPSetting.AVEE1, current_clamp, Power.UCPSetting.AVEE1, Power.UCPSetting.AVEE1)
-	local r, measureResults = Power_Measurement(channel)
-	local measureResultsDecoded = cjson.decode(measureResults)
-	LOG.INFO(string.format("AVEE_Meas:%.4fV, AVEE_Vol:%.4fV",measureResultsDecoded[1], vol))
-	if math.floor(math.abs(measureResultsDecoded[1]) + 0.5) ~= math.floor(math.abs(vol/1000) + 0.5) then
+	POWER.SINGLE_SET(channel, EN, RANGE, Power.CONSTANT_VOLTAGE , vol, voltage_clamp, Power.UVPSetting[CHAN_NAME], current_clamp, Power.UCPSetting[CHAN_NAME], Power.UCPSetting[CHAN_NAME])
+	local _, measureResults = Power_Measurement(channel)
+	local meas = cjson.decode(measureResults)[1]
+	LOG.INFO(string.format("%s Meas:%.4fV, Set:%.4fV", CHAN_NAME, meas, vol / 1000))
+	if math.floor(math.abs(meas) + 0.5) == math.floor(math.abs(vol / 1000) + 0.5) then
 		return 0
 	else
 		return 1
@@ -536,40 +537,6 @@ end
 
 
 
-function Get_ALL_POWER()
-	local result_table = {}
-	local VDD18_DATA = {
-		VOLTAGE = 0.0,    -- volts
-		CURRENT = 0.0,    -- amps
-	}
-	local VDD10_DATA = {
-		VOLTAGE = 0.0,    -- volts
-		CURRENT = 0.0,    -- amps
-	}
-	local AVEE_DATA = {
-		VOLTAGE = 0.0,    -- volts
-		CURRENT = 0.0,    -- amps
-	} 
-
-	VDD18_DATA.VOLTAGE, VDD18_DATA.CURRENT=POWER.VOL_CUR(P_VDD18)
-	VDD10_DATA.VOLTAGE, VDD10_DATA.CURRENT=POWER.VOL_CUR(P_VDD10_MIPI)
-	AVEE_DATA.VOLTAGE, AVEE_DATA.CURRENT=POWER.VOL_CUR(P_AVEE)
-	
-	VDD18_DATA.CURRENT = VDD18_DATA.CURRENT/1e6
-	VDD10_DATA.CURRENT = VDD10_DATA.CURRENT/1e6
-	AVEE_DATA.CURRENT = AVEE_DATA.CURRENT/1e6
-	
-	
-	LOG.INFO(string.format("VDD18_DATA:%.4fV,%.4fmA",VDD18_DATA.VOLTAGE, VDD18_DATA.CURRENT))
-	LOG.INFO(string.format("VDD10_DATA:%.4fV,%.4fmA",VDD10_DATA.VOLTAGE, VDD10_DATA.CURRENT))
-	LOG.INFO(string.format("AVEE_DATA:%.4fV,%.4fmA",AVEE_DATA.VOLTAGE, AVEE_DATA.CURRENT))
-	table.insert(result_table,VDD18_DATA.CURRENT)
-	table.insert(result_table,VDD10_DATA.CURRENT)
-	table.insert(result_table,AVEE_DATA.CURRENT)
-	local json_data = cjson.encode(result_table)
-	LOG.INFO(json_data)
-	return 0 ,json_data
-end
 --Get_Channle_Power(4)
 function Get_Channle_Power(channle)
 	local result_table = {}

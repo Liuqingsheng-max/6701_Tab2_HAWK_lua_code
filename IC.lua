@@ -97,7 +97,7 @@ function F_I2C_Initial_MIPI()
 	
 	IIC_W_Tab2(0xFE, {0x12, 0x23})--LOGICIPTEST
 	IIC_W_Tab2(0xCF, {0x13, 0x07, 0xC0, 0xFF, 0xFF, 0x4F, 0x00, 0xBF, 0x1F, 0xC4, 0x01, 0x00, 0x34}) --MIPI
-	IIC_W_Tab2(0xBF, {(t.vdisplay >> 8)& 0x07, t.vdisplay & 0xFF, (t.vdisplay >> 8)& 0x07, t.vdisplay & 0xFF,--Video Information
+	IIC_W_Tab2(0xBF, {(t.vdisplay >> 8)& 0x07, t.vdisplay & 0xFF, (t.hdisplay >> 8)& 0x07, t.hdisplay & 0xFF,--Video Information
 						0x00, t.vbp, 0x00, t.vfp, 0x00, t.hbp, 0x00, t.hfp})
 	
 	IIC_W_Tab2(0xB4, {0x00, 0x00, 0x00, 0x00})	--Start Image Position
@@ -513,10 +513,10 @@ function Display_init(mode)
 		DMIPI.HS() 
 		CORE.SPI_WRITE(0xD5,0x00,0x00,0x00,0x01)  --clk hs
 
-		LOG.INFO("do mipi")
+		LOG.DEBUG("do mipi")
 	else
 		--VPG_IIC_WRITE(9,255,"135")
-		LOG.INFO("do VPG")
+		LOG.DEBUG("do VPG")
 	end
 	
 end

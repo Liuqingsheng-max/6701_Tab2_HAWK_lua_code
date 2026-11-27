@@ -890,7 +890,6 @@ function EFuse_write256bit(offset, val)
 	return 1
 end
 
-file_id = 100
 function DAC_Full_Range_Calibration()
 	local results = {}
 	local current_table = {}
@@ -919,9 +918,9 @@ function DAC_Full_Range_Calibration()
 	local Vol, leakageCurrent = POWER.VOL_CUR(P_SMU2)
 	LOG.INFO(string.format("Pre?set Current:%f", leakageCurrent))
 
-	IIC.WRITE(0x60, { 0xF0 }, { 0x5a, 0x5a })
-	IIC.WRITE(0x60, { 0xF1 }, { 0x5a, 0x5a })
-	IIC.WRITE(0x60, { 0xFc }, { 0x5a, 0x5a })
+	IIC_W_Tab2(0xF0, { 0x5a, 0x5a })
+	IIC_W_Tab2(0xF1, { 0x5a, 0x5a })
+	IIC_W_Tab2(0xFc, { 0x5a, 0x5a })
 	IIC_W_Tab2(0xFD, { 0x00, 0x02, 0x94 }) --ANALOGTEST
 
 	TIME.DELAY(100)
@@ -1087,9 +1086,9 @@ function Pixel_Current_DAC_Cal_binary()
 	LOG.INFO(string.format("Preset AMUX Voltage:%f", preVolt))
 
 	-- I2C keys : F0h Level2 key, F1h OTP/eFuse key, FCh 3rd key
-	IIC.WRITE(0x60, { 0xF0 }, { 0x5a, 0x5a }) -- unlock Level2 register bank
-	IIC.WRITE(0x60, { 0xF1 }, { 0x5a, 0x5a }) -- unlock OTP key
-	IIC.WRITE(0x60, { 0xFc }, { 0x5a, 0x5a }) -- unlock 3rd key
+	IIC_W_Tab2(0xF0, { 0x5a, 0x5a }) -- unlock Level2 register bank
+	IIC_W_Tab2(0xF1, { 0x5a, 0x5a }) -- unlock OTP key
+	IIC_W_Tab2(0xFc, { 0x5a, 0x5a }) -- unlock 3rd key
 	-- FDh ANALOGTEST : enable analog-test item path to AMON
 	-- 3rd P = 0x94 → VDC_TPXL_EN (analog pixel test enabled) + ANA_TMUX/ANA_TEST_SET
 	IIC_W_Tab2(0xFD, { 0x00, 0x02, 0x94 })
@@ -1300,9 +1299,9 @@ function DAC_2point_calibration()
 	local Vol, leakageCurrent = POWER.VOL_CUR(P_SMU2)
 	LOG.INFO(string.format("Pre-set (leakage) Current: %f nA", leakageCurrent))
 
-	IIC.WRITE(0x60, { 0xF0 }, { 0x5a, 0x5a }) -- Level2 Key
-	IIC.WRITE(0x60, { 0xF1 }, { 0x5a, 0x5a }) -- OTP Key
-	IIC.WRITE(0x60, { 0xFc }, { 0x5a, 0x5a }) -- third key
+	IIC_W_Tab2(0xF0, { 0x5a, 0x5a }) -- Level2 Key
+	IIC_W_Tab2(0xF1, { 0x5a, 0x5a }) -- OTP Key
+	IIC_W_Tab2(0xFc, { 0x5a, 0x5a }) -- third key
 
 	-- FDh per the test plan's s25m11_otp_ipxl_0420().
 	-- Measured: 0x02 and 0x12 behave identically here.
@@ -1431,9 +1430,9 @@ Return:
 --]]
 function Temperature_Sensor_Thermometer()
 	local results = {}
-	IIC.WRITE(0x60, { 0xF0 }, { 0x5a, 0x5a }) -- Level2 Key
-	IIC.WRITE(0x60, { 0xF1 }, { 0x5a, 0x5a }) -- OTP Key
-	IIC.WRITE(0x60, { 0xFc }, { 0x5a, 0x5a }) -- third key
+	IIC_W_Tab2(0xF0, { 0x5a, 0x5a }) -- Level2 Key
+	IIC_W_Tab2(0xF1, { 0x5a, 0x5a }) -- OTP Key
+	IIC_W_Tab2(0xFc, { 0x5a, 0x5a }) -- third key
 
 	--IIC_W_Tab2(0xFE, {0x02, 0x03})
 
@@ -1497,9 +1496,10 @@ end
 --Set_Brightness(100)
 function Set_Brightness(glbc_value)
 	local results = {}
-	IIC.WRITE(0x60, { 0xF0 }, { 0x5a, 0x5a }) -- Level2 Key
-	IIC.WRITE(0x60, { 0xF1 }, { 0x5a, 0x5a }) -- OTP Key
-	IIC.WRITE(0x60, { 0xFc }, { 0x5a, 0x5a }) -- third key
+	IIC_W_Tab2(0xF0, { 0x5a, 0x5a }) -- Level2 Key
+	IIC_W_Tab2(0xF1, { 0x5a, 0x5a }) -- OTP Key
+	IIC_W_Tab2(0xFc, { 0x5a, 0x5a }) -- third key
+
 
 	--IIC_W_Tab2(0xF6, {0x00, 0x01 ,0xFF}) -- Pixel current to max
 	--IIC_R_Tab2(0xF6,3)
@@ -1778,9 +1778,9 @@ Return:
 --]]
 function Temperature_Sensor_ADC()
 	local results = {}
-	IIC.WRITE(0x60, { 0xF0 }, { 0x5a, 0x5a }) -- Level2 Key
-	IIC.WRITE(0x60, { 0xF1 }, { 0x5a, 0x5a }) -- OTP Key
-	IIC.WRITE(0x60, { 0xFc }, { 0x5a, 0x5a }) -- third key
+	IIC_W_Tab2(0xF0, { 0x5a, 0x5a }) -- Level2 Key
+	IIC_W_Tab2(0xF1, { 0x5a, 0x5a }) -- OTP Key
+	IIC_W_Tab2(0xFc, { 0x5a, 0x5a }) -- third key
 
 	IIC_W_Tab2(0xFE, { 0x02, 0x03 })
 
@@ -1833,16 +1833,6 @@ function Temperature_Sensor_ADC()
 	return 0, json_data
 end
 
---  PLLdivider
--- Set_PLL_Divider(5)
-function Set_PLL_Divider(pll_div)
-	--local plldiv_val = 0x50 + pll_div - 1
-	IIC_W_Tab2(0xF3, { plldiv_val })
-end
-
-
-
--- fields: fa = {2 bytes}, e4 = {6 bytes}, pat = VPG pattern gray level
 
 PWM_CASES = {
 	-- Test (1): T_nov1 sweep (T_PWMSET - T_CMPSET)
